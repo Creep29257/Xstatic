@@ -1,4 +1,4 @@
-meshtastic-x11
+Xstatic
 ==============
 
 Client lourd Meshtastic en C, interface X11 (Xlib), portable FreeBSD/Linux.
