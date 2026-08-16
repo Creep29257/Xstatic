@@ -1,0 +1,15 @@
+meshtastic-x11
+==============
+
+Client lourd Meshtastic en C, interface X11 (Xlib), portable FreeBSD/Linux.
+
+Architecture (voir doc/design ou historique de discussion) :
+  src/platform/  -- accès série, dépendant de l'OS (FreeBSD prioritaire, Linux en second)
+  src/protocol/  -- framing + décodage protobuf Meshtastic (nanopb à intégrer)
+  src/core/      -- état du mesh, logique métier pure
+  src/ui/        -- interface graphique, Xlib pour l'instant
+
+v0.1 cible : lire le port série, décoder les NodeInfo reçus, les afficher
+en liste dans une fenêtre Xlib basique.
+
+Licence : BSD 2-clause, voir LICENSE.

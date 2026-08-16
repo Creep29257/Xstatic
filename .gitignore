@@ -1,0 +1,7 @@
+# binaires compilés
+test
+*.o
+
+# éditeurs
+*.swp
+*~
