@@ -25,6 +25,7 @@
  * main.c -- point d'entrée, boucle select() fusionnant fd série et fd X11.
  */
 #include "platform/platform.h"
+#include "protocol/framing.h"
 #include <stdio.h>
 
 /*
@@ -43,6 +44,7 @@ main(void)
 	int fd;
 	unsigned char buf[64];
 	ssize_t n;
+	struct framing_state fs = {0}; 
 
 	/* Trame ToRadio minimale, construite à la main (protobuf) :
 	 *   94 c3        -- octets magiques de début de trame (START1/START2)
@@ -65,19 +67,31 @@ main(void)
 	 * un nombre arbitraire d'octets, sans rapport avec les frontières
 	 * des trames Meshtastic (une trame peut être coupée entre deux
 	 * lectures, ou plusieurs trames peuvent arriver d'un coup). */
-	for (;;) {
-		n = platform_serial_read(fd, buf, sizeof(buf));
-		if (n > 0) {
-			for (ssize_t i = 0; i < n; i++) {
-				printf("%02x ", buf[i]);
-			}
-			printf("\n");
-			fflush(stdout);
-		} else if (n == -1) {
-			perror("read");
-			break;
-		}
-	}
+for (;;) {
+    n = platform_serial_read(fd, buf, sizeof(buf));
+    printf("n=%zd\n", n);
+    for (ssize_t j = 0; j < n; j++) {
+    printf("%02x ", buf[j]);
+}
+printf("\n");
+	fflush(stdout);
+    if (n > 0) {
+       
+        framing_feed(&fs, buf, n);
+        if (fs.frame_ready) {
+            printf("trame recue, %u octets: ", fs.payload_pos);
+            for (uint16_t i = 0; i < fs.payload_pos; i++) {
+                printf("%02x ", fs.payload[i]);
+            }
+            printf("\n");
+            fflush(stdout);
+            fs.frame_ready = 0;  
+        }
+    } else if (n == -1) {
+        perror("read");
+        break;
+    }
+}
 
 	return 0;
 }

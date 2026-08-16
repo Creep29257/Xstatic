@@ -43,6 +43,7 @@ struct framing_state {
     uint16_t expected_len;
     unsigned char payload[512];
     uint16_t payload_pos;
+    int frame_ready;   /* passe à 1 quand une trame vient d'être complétée */
 };
 
 void framing_feed(struct framing_state *state, const unsigned char *buf, size_t count);

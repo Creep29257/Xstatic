@@ -66,6 +66,7 @@ framing_feed(struct framing_state *state, const unsigned char *buf, size_t count
 
             if (state->payload_pos == state->expected_len) {
                 state->phase = FRAMING_WAIT_START1;
+                state->frame_ready = 1;
             }
             break;
         }
