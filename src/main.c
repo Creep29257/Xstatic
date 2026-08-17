@@ -26,6 +26,8 @@
  */
 #include "platform/platform.h"
 #include "protocol/framing.h"
+#include "protocol/generated/meshtastic/mesh.pb.h"
+#include "third_party/nanopb/pb_decode.h"
 #include <stdio.h>
 
 /*
@@ -45,6 +47,7 @@ main(void)
 	unsigned char buf[64];
 	ssize_t n;
 	struct framing_state fs = {0}; 
+	meshtastic_FromRadio msg = meshtastic_FromRadio_init_zero;
 
 	/* Trame ToRadio minimale, construite à la main (protobuf) :
 	 *   94 c3        -- octets magiques de début de trame (START1/START2)
