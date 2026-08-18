@@ -72,29 +72,32 @@ main(void)
 	 * lectures, ou plusieurs trames peuvent arriver d'un coup). */
 for (;;) {
     n = platform_serial_read(fd, buf, sizeof(buf));
-    printf("n=%zd\n", n);
-    for (ssize_t j = 0; j < n; j++) {
-    printf("%02x ", buf[j]);
-}
-printf("\n");
-	fflush(stdout);
     if (n > 0) {
-       
         framing_feed(&fs, buf, n);
         if (fs.frame_ready) {
-            printf("trame recue, %u octets: ", fs.payload_pos);
-            for (uint16_t i = 0; i < fs.payload_pos; i++) {
-                printf("%02x ", fs.payload[i]);
-            }
-            printf("\n");
-            fflush(stdout);
-            fs.frame_ready = 0;  
+			  printf("frame_ready=1, payload_pos=%u\n", fs.payload_pos);
+            pb_istream_t stream = pb_istream_from_buffer(fs.payload, fs.payload_pos);
+            if (pb_decode(&stream, meshtastic_FromRadio_fields, &msg)) {
+    if (msg.which_payload_variant == meshtastic_FromRadio_my_info_tag) {
+        printf("MyNodeInfo recu, mon node = %u\n", msg.my_info.my_node_num);
+    } else if (msg.which_payload_variant == meshtastic_FromRadio_node_info_tag) {
+        if (msg.node_info.has_user) {
+            printf("NodeInfo recu : %s\n", msg.node_info.user.long_name);
+        } else {
+            printf("NodeInfo recu (sans user info)\n");
+        }
+    } else {
+        printf("autre message, tag=%d\n", msg.which_payload_variant);
+    }
+} else {
+    printf("echec\n");
+}
+            fs.frame_ready = 0;
         }
     } else if (n == -1) {
         perror("read");
         break;
     }
 }
-
-	return 0;
+return 0;
 }
