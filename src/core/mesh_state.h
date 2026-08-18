@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2026 Rémi
+ * Copyright (c) 2026 Rémi Assailly
+ * remi@assailly.com
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -28,6 +29,31 @@
 #ifndef MESHTASTIC_MESH_STATE_H
 #define MESHTASTIC_MESH_STATE_H
 
-/* TODO: déclarations */
+#include <stdbool.h>
+#include <stdint.h>
+
+struct mesh_position {
+    bool valid;
+    int32_t latitude_i;
+    int32_t longitude_i;
+    int32_t altitude;
+};
+
+struct mesh_node {
+    uint32_t num;
+    char long_name[40];
+    char *custom_name;
+    uint8_t hw_model;
+    struct mesh_position position;
+    struct mesh_node *next;
+};
+
+typedef struct mesh_position mesh_position_t;
+typedef struct mesh_node mesh_node_t;
+
+typedef struct mesh_state mesh_state_t;
+
+mesh_state_t *mesh_state_init(void);
+
 
 #endif /* MESHTASTIC_MESH_STATE_H */
