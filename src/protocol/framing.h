@@ -30,6 +30,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define FRAMING_MAX_PAYLOAD 512
+
 enum framing_phase {
     FRAMING_WAIT_START1,
     FRAMING_WAIT_START2,
@@ -41,7 +43,7 @@ enum framing_phase {
 struct framing_state {
     enum framing_phase phase;
     uint16_t expected_len;
-    unsigned char payload[512];
+    unsigned char payload[FRAMING_MAX_PAYLOAD];
     uint16_t payload_pos;
     int frame_ready;   /* passe à 1 quand une trame vient d'être complétée */
 };

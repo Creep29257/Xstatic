@@ -27,7 +27,22 @@
 
 #include "framing.h"
 
-/* TODO: implémentation framing */
+/*
+ * framing_feed -- avance le parsing incrémental d'une trame Meshtastic.
+ *
+ * Le flux série peut être coupé n'importe où par un read() : l'état du
+ * parsing (state->phase, state->expected_len, state->payload_pos...) est
+ * donc conservé entre les appels via la struct framing_state, passée par
+ * pointeur. Chaque appel reprend là où le précédent s'est arrêté.
+ *
+ * Repère les octets magiques 0x94 0xc3 en début de trame, lit la longueur
+ * du payload sur 2 octets big-endian, puis recopie le payload dans
+ * state->payload (borné à FRAMING_MAX_PAYLOAD, voir framing.h).
+ *
+ * state->frame_ready passe à 1 quand une trame complète est disponible.
+ * La fonction ne le remet jamais à 0 : c'est à l'appelant (main.c) de le
+ * faire une fois la trame lue.
+ */
 void
 framing_feed(struct framing_state *state, const unsigned char *buf, size_t count)
 {
@@ -42,6 +57,11 @@ framing_feed(struct framing_state *state, const unsigned char *buf, size_t count
             break;
 
         case FRAMING_WAIT_START2:
+            /* 0xc3 après un 0x94 confirme le début d'une trame.
+            * Un 0x94 répété ne fait rien (on reste ici, au cas où
+            * ce serait un nouveau début de trame qui se prépare).
+            * Tout autre octet = bruit/resync, on repart à zéro. */
+
             if (byte == 0xc3) {
                 state->phase = FRAMING_READ_LEN_HI;
             } else if (byte != 0x94) {
@@ -50,14 +70,26 @@ framing_feed(struct framing_state *state, const unsigned char *buf, size_t count
             break;
 
         case FRAMING_READ_LEN_HI:
+         FRAMING_READ_LEN_HI:
+            /* Longueur du payload encodée en big-endian sur 2 octets :
+            * on reçoit d'abord l'octet de poids fort. */
             state->expected_len = (uint16_t)(byte << 8);
             state->phase = FRAMING_READ_LEN_LO;
             break;
 
         case FRAMING_READ_LEN_LO:
+             /* Octet de poids faible : on complète expected_len. */
             state->expected_len = state->expected_len | byte;
             state->payload_pos = 0;
-            state->phase = FRAMING_READ_PAYLOAD;
+            /* Protection contre débordement de state->payload : si la longueur
+            * annoncée dépasse la taille du buffer, on rejette la trame et on
+            * repart de zéro plutôt que d'écrire hors des limites du tableau. */
+            if (state->expected_len > 512) {
+                state->phase = FRAMING_WAIT_START1;
+            } else {
+                state->phase = FRAMING_READ_PAYLOAD;
+            }
+           
             break;
 
         case FRAMING_READ_PAYLOAD:
