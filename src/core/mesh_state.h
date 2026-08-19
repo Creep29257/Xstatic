@@ -42,6 +42,7 @@ struct mesh_position {
     int32_t altitude;
 };
 
+
 struct mesh_node {
     uint32_t num;
     char long_name[MESH_LONG_NAME_MAX];
