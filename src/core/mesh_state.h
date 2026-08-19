@@ -32,6 +32,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define MESH_LONG_NAME_MAX 40  /* doit matcher meshtastic_User.long_name (mesh.pb.h) */
+
+
 struct mesh_position {
     bool valid;
     int32_t latitude_i;
@@ -41,19 +44,31 @@ struct mesh_position {
 
 struct mesh_node {
     uint32_t num;
-    char long_name[40];
+    char long_name[MESH_LONG_NAME_MAX];
     char *custom_name;
     uint8_t hw_model;
     struct mesh_position position;
     struct mesh_node *next;
 };
 
+struct mesh_node_info {
+    uint32_t num;
+    char long_name[MESH_LONG_NAME_MAX];
+    char *custom_name;
+    uint8_t hw_model;
+    struct mesh_position position;
+};
+
+
 typedef struct mesh_position mesh_position_t;
 typedef struct mesh_node mesh_node_t;
-
+typedef struct mesh_node_info mesh_node_info_t;
 typedef struct mesh_state mesh_state_t;
 
 mesh_state_t *mesh_state_init(void);
+void mesh_state_destroy(mesh_state_t *state);
+bool mesh_state_add_or_update_node(mesh_state_t *state, mesh_node_info_t *node_info);
+mesh_node_t *mesh_state_find_node(mesh_state_t *state, uint32_t num);
 
 
 #endif /* MESHTASTIC_MESH_STATE_H */
