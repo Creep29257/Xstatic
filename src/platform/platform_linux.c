@@ -26,9 +26,8 @@
  * platform_linux.c -- implémentation Linux (termios, /dev/ttyACM*) de platform.h.
  */
 
-#include "platform.h"
 
-/ * 
+/* 
  *platform_linux.c -- implémentation linux (termios, /dev/ttyACM*, cdc_acm) de platform.h.
  */
 #include "platform.h"
