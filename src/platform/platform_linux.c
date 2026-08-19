@@ -26,10 +26,6 @@
  * platform_linux.c -- implémentation Linux (termios, /dev/ttyACM*) de platform.h.
  */
 
-
-/* 
- *platform_linux.c -- implémentation linux (termios, /dev/ttyACM*, cdc_acm) de platform.h.
- */
 #include "platform.h"
 
 #include <fcntl.h>      /* open(), O_RDWR, O_NOCTTY */

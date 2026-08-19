@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2026 Rémi All rights reserved.
+ * Copyright (c) 2026 Rémi Assailly All rights reserved.
+ * remi@assailly.com
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -29,15 +30,18 @@
 #include <stdio.h>
 
 /*
- * Programme de test manuel (temporaire, pas la structure finale du client) :
- * ouvre le port série du RAK4631, envoie une requête
- * ToRadio.want_config_id pour faire basculer le firmware du mode "logs
- * texte" au mode "API protobuf", puis affiche en boucle tout ce qui est
- * reçu, en hexadécimal.
+ * main.c -- point d'entrée provisoire (structure finale à venir,
+ * cf design.md : fusion select() avec ui_xlib). Ouvre le port série
+ * du RAK4631, envoie le handshake want_config_id, puis lit le flux
+ * en boucle : framing_feed() découpe les trames, pb_decode() les
+ * décode en meshtastic_FromRadio, et le contenu est affiché selon
+ * le tag reçu (MyNodeInfo, NodeInfo, ConfigComplete...).
  *
- * Le prochain module (protocol/framing.c) remplacera cette boucle naïve par
- * un vrai découpage des trames 0x94 0xc3 [longueur] [payload].
+ * Cette logique devrait globalement survivre, réorganisée en
+ * fonctions séparées et branchée sur core/mesh_state au lieu
+ * des printf() directs.
  */
+ 
 int
 main(void)
 {
