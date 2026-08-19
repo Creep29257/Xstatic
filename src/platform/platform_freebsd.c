@@ -106,3 +106,21 @@ platform_serial_write(int fd, const void *buf, size_t count)
 {
 	return write(fd, buf, count);
 }
+
+/* Ferme proprement le descripteur de fichier série, si celui-ci
+ * existe et n'est pas un descripteur réservé par l'OS (0, 1, 2). */
+void
+platform_serial_close(int fd)
+{
+	if (fd == -1) {
+		perror("close: fd inexistant");
+		return;
+	}
+
+	if (fd == 0 || fd == 1 || fd == 2) {
+		perror("close: fd réservé par l'OS");
+		return;
+	}
+
+	close(fd);
+}

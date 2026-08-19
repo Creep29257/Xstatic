@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2026 Rémi
+ * Copyright (c) 2026 Rémi Assailly
+ * remi@assailly.com
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -26,32 +27,9 @@
  */
 
 #include "platform.h"
-/*
- * Copyright (c) 2026 Rémi Assailly
- * remi@assailly.COM
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * platform_linux.c -- implémentation linux (termios, /dev/ttyACM*, cdc_acm) de platform.h.
+
+/ * 
+ *platform_linux.c -- implémentation linux (termios, /dev/ttyACM*, cdc_acm) de platform.h.
  */
 #include "platform.h"
 
@@ -135,4 +113,20 @@ platform_serial_write(int fd, const void *buf, size_t count)
 	return write(fd, buf, count);
 }
 
-/* TODO: implémentation Linux */
+/* Ferme proprement le descripteur de fichier série, si celui-ci
+ * existe et n'est pas un descripteur réservé par l'OS (0, 1, 2). */
+void
+platform_serial_close(int fd)
+{
+	if (fd == -1) {
+		perror("close: fd inexistant");
+		return;
+	}
+
+	if (fd == 0 || fd == 1 || fd == 2) {
+		perror("close: fd réservé par l'OS");
+		return;
+	}
+
+	close(fd);
+}
