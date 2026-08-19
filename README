@@ -3,7 +3,7 @@ Xstatic
 
 Client lourd Meshtastic en C, interface X11 (Xlib), portable FreeBSD/Linux.
 
-Architecture (voir doc/design ou historique de discussion) :
+Architecture (voir doc/design) :
   src/platform/  -- accès série, dépendant de l'OS (FreeBSD prioritaire, Linux en second)
   src/protocol/  -- framing + décodage protobuf Meshtastic (nanopb à intégrer)
   src/core/      -- état du mesh, logique métier pure

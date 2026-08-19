@@ -44,8 +44,10 @@ de lancer le client en root.
 
 - `0x94 0xc3` (START1/START2) — magiques fixes marquant le début
   d'une trame.
-- longueur — 2 octets, big-endian, taille du payload qui suit
-  (max observé dans le client officiel : 512 octets).
+- longueur — 2 octets, big-endian, taille du payload qui suit. Limité
+à FRAMING_MAX_PAYLOAD (512 octets) côté implémentation : toute
+longueur annoncée au-delà est rejetée par framing_feed() (protection
+contre débordement de state->payload).
 - payload — message protobuf `FromRadio` (device → client) ou
   `ToRadio` (client → device).
 
@@ -101,15 +103,18 @@ du changement d'état éventuel.
 - `cc` invoqué en direct dans les commandes/Makefile plutôt que `gcc`
   ou `clang` en dur, pour rester portable FreeBSD/Linux.
 
-## Prochaines étapes (au moment de la rédaction)
+## Prochaines étapes (mise à jour)
 
-- Brancher `framing_feed()` dans `main.c` à la place du dump hexa brut.
-- Intégrer nanopb pour décoder le payload une fois une trame complète
-  détectée (`FromRadio`, `NodeInfo`, `MyNodeInfo`...).
-- `core/mesh_state` : état du mesh (liste de nodes), logique métier
-  pure sans dépendance OS/UI.
+- `core/mesh_state.c` : implémenter la struct interne (liste chaînée
+  de nodes), et les 4 fonctions déclarées dans mesh_state.h (init,
+  destroy, add_or_update_node, find_node). Logique métier pure, sans
+  dépendance OS/UI.
+- Brancher `mesh_state` dans `main.c` à la place des printf() directs.
+- Mapper les tags FromRadio restants (config, moduleConfig, channel,
+  metadata, queueStatus...) à des affichages utiles.
 - `ui/ui_xlib.c` : fenêtre Xlib, boucle d'événements, fusion avec le
   fd série via `select()`.
+- Un vrai Makefile (la commande de compilation devient longue).
 
 ## Licence
 
