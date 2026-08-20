@@ -1,13 +1,30 @@
 Xstatic
 ==============
-
 Client lourd Meshtastic en C, interface X11 (Xlib), portable FreeBSD/Linux.
 
 Architecture (voir doc/design) :
   src/platform/  -- accès série, dépendant de l'OS (FreeBSD prioritaire, Linux en second)
-  src/protocol/  -- framing + décodage protobuf Meshtastic (nanopb à intégrer)
-  src/core/      -- état du mesh, logique métier pure
-  src/ui/        -- interface graphique, Xlib pour l'instant
+  src/protocol/  -- framing + décodage protobuf Meshtastic (nanopb intégré)
+  src/core/      -- état du mesh (mesh_state), logique métier pure
+  src/ui/        -- interface graphique, Xlib (à venir)
+
+État actuel :
+  - Lecture du port série et parsing des trames Meshtastic (framing.c) : fait.
+  - Décodage protobuf (nanopb) des 18 tags de FromRadio.payload_variant : fait,
+    testé sur device réel (RAK4631).
+  - core/mesh_state : liste chaînée des nodes connus (num, nom, position...),
+    alimentée par les NodeInfo décodés : fait.
+  - Résolution des identifiants de node (from/to des MeshPacket) en noms
+    lisibles via mesh_state : fait.
+  - Gestion propre de l'arrêt (Ctrl+C / SIGINT) : fait.
+  - Interface Xlib : pas commencé.
+
+À faire :
+  - Détection automatique du device série (actuellement /dev/cuaU0 en dur
+    dans main.c) : parcourir les devices disponibles pour trouver le bon
+    port Meshtastic automatiquement, au lieu de le préciser à la main.
+  - ui/ui_xlib.c : fenêtre Xlib, boucle XNextEvent.
+  - Fusion select() entre le fd série et la connexion Xlib.
 
 v0.1 cible : lire le port série, décoder les NodeInfo reçus, les afficher
 en liste dans une fenêtre Xlib basique.
