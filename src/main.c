@@ -162,9 +162,105 @@ main(void)
         							printf("payload variant binaire\n");
 								}
    								break;
+								
 						case meshtastic_FromRadio_clientNotification_tag:
 								printf("client notification tag message: %s\n",msg.clientNotification.message);
 								break;
+						case meshtastic_FromRadio_config_tag:
+    						switch (msg.config.which_payload_variant) {
+    							case meshtastic_Config_device_tag:
+        							printf("Config recu : sous-type=device\n");
+        							break;
+    							case meshtastic_Config_position_tag:
+        							printf("Config recu : sous-type=position\n");
+        							break;
+    							case meshtastic_Config_power_tag:
+        							printf("Config recu : sous-type=power\n");
+        							break;
+    							case meshtastic_Config_network_tag:
+        							printf("Config recu : sous-type=network\n");
+        							break;
+    							case meshtastic_Config_display_tag:
+        							printf("Config recu : sous-type=display\n");
+        							break;
+    							case meshtastic_Config_lora_tag:
+        							printf("Config recu : sous-type=lora\n");
+        							break;
+    							case meshtastic_Config_bluetooth_tag:
+        						printf("Config recu : sous-type=bluetooth\n");
+        							break;
+    							case meshtastic_Config_security_tag:
+									printf("Config recu : sous-type=security\n");
+									break;
+								case meshtastic_Config_sessionkey_tag:
+									printf("Config recu : sous-type=sessionkey\n");
+									break;
+								case meshtastic_Config_device_ui_tag:
+									printf("Config recu : sous-type=device_ui\n");
+									break;
+								default:
+									printf("Config recu : sous-type inconnu, tag=%d\n", msg.config.which_payload_variant);
+									break;
+								}
+								break;
+						case meshtastic_FromRadio_moduleConfig_tag:
+							switch (msg.moduleConfig.which_payload_variant) {
+							case meshtastic_ModuleConfig_mqtt_tag:
+								printf("ModuleConfig recu : sous-type=mqtt\n");
+								break;
+							case meshtastic_ModuleConfig_serial_tag:
+								printf("ModuleConfig recu : sous-type=serial\n");
+								break;
+							case meshtastic_ModuleConfig_external_notification_tag:
+								printf("ModuleConfig recu : sous-type=external_notification\n");
+								break;
+							case meshtastic_ModuleConfig_store_forward_tag:
+								printf("ModuleConfig recu : sous-type=store_forward\n");
+								break;
+							case meshtastic_ModuleConfig_range_test_tag:
+								printf("ModuleConfig recu : sous-type=range_test\n");
+								break;
+							case meshtastic_ModuleConfig_telemetry_tag:
+								printf("ModuleConfig recu : sous-type=telemetry\n");
+								break;
+							case meshtastic_ModuleConfig_canned_message_tag:
+								printf("ModuleConfig recu : sous-type=canned_message\n");
+								break;
+							case meshtastic_ModuleConfig_audio_tag:
+								printf("ModuleConfig recu : sous-type=audio\n");
+								break;
+							case meshtastic_ModuleConfig_remote_hardware_tag:
+								printf("ModuleConfig recu : sous-type=remote_hardware\n");
+								break;
+							case meshtastic_ModuleConfig_neighbor_info_tag:
+								printf("ModuleConfig recu : sous-type=neighbor_info\n");
+								break;
+							case meshtastic_ModuleConfig_ambient_lighting_tag:
+								printf("ModuleConfig recu : sous-type=ambient_lighting\n");
+								break;
+							case meshtastic_ModuleConfig_detection_sensor_tag:
+								printf("ModuleConfig recu : sous-type=detection_sensor\n");
+								break;
+							case meshtastic_ModuleConfig_paxcounter_tag:
+								printf("ModuleConfig recu : sous-type=paxcounter\n");
+								break;
+							case meshtastic_ModuleConfig_statusmessage_tag:
+								printf("ModuleConfig recu : sous-type=statusmessage\n");
+								break;
+							case meshtastic_ModuleConfig_traffic_management_tag:
+								printf("ModuleConfig recu : sous-type=traffic_management\n");
+								break;
+							case meshtastic_ModuleConfig_tak_tag:
+								printf("ModuleConfig recu : sous-type=tak\n");
+								break;
+							case meshtastic_ModuleConfig_mesh_beacon_tag:
+								printf("ModuleConfig recu : sous-type=mesh_beacon\n");
+								break;
+							default:
+								printf("ModuleConfig recu : sous-type inconnu, tag=%d\n", msg.moduleConfig.which_payload_variant);
+								break;
+							}
+							break;
 					default:
 						printf("autre message, tag=%d\n", msg.which_payload_variant);
 						break;
