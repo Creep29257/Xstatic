@@ -26,6 +26,23 @@ Architecture (voir doc/design) :
   - ui/ui_xlib.c : fenêtre Xlib, boucle XNextEvent.
   - Fusion select() entre le fd série et la connexion Xlib.
 
+Compilation :
+  make        -- compile le binaire "test"
+  make clean  -- supprime le binaire compilé
+
+Config :
+  Important mettre votre port serie dans le main.c 
+  fd = platform_serial_open("/dev/cuaU0"); sous BSD /dev/cuaU* sous Linux /dev/ttyACM* 
+  (remplacer etoile par le numero de votre port) 
+
+Note sur l'usage de l'IA :
+  Ce projet est développé avec l'assistance de Claude (Anthropic), utilisé
+  en mode "sparring" : le code métier (framing.c, mesh_state.c, main.c...)
+  est écrit par l'auteur humain, l'IA agissant comme guide/relecteur
+  (explications, détection d'erreurs, revue de conception) plutôt que
+  générateur de code. Quelques fichiers annexes (Makefile, scripts, docs)
+  ont pu être générés directement par l'IA.
+
 v0.1 cible : lire le port série, décoder les NodeInfo reçus, les afficher
 en liste dans une fenêtre Xlib basique.
 
