@@ -115,6 +115,23 @@ main(void)
 					case meshtastic_FromRadio_config_complete_id_tag:
 						printf("ConfigComplete id recu %u\n", msg.config_complete_id);
 						break;
+					case meshtastic_FromRadio_rebooted_tag:
+					if(msg.rebooted)
+					{
+						printf("device vient d'etre rebooter \n");
+					}
+						break;
+					case meshtastic_FromRadio_queueStatus_tag:
+						printf("QueueStatus recu : res=%d free=%u maxlen=%u mesh_packet_id=%u\n",
+    msg.queueStatus.res, msg.queueStatus.free, msg.queueStatus.maxlen, msg.queueStatus.mesh_packet_id);
+						break;
+						case meshtastic_FromRadio_fileInfo_tag:
+							printf("nom du fichier: %s, taille %u \n", msg.fileInfo.file_name, msg.fileInfo.size_bytes);
+							break;
+						case meshtastic_FromRadio_xmodemPacket_tag:
+							printf("control: %d, seq: %u, crc16: %u \n", msg.xmodemPacket.control, msg.xmodemPacket.seq, msg.xmodemPacket.crc16);
+							break;
+
 					default:
 						printf("autre message, tag=%d\n", msg.which_payload_variant);
 						break;
