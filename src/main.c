@@ -262,7 +262,31 @@ main(void)
 							}
 							break;
 						case meshtastic_FromRadio_packet_tag:
-							printf(" from : %u, to: %u channel: %u id: %u\n", msg.packet.from, msg.packet.to, msg.packet.channel, msg.packet.id);
+							mesh_node_t *from_node = mesh_state_find_node(state, msg.packet.from);
+								if (from_node != NULL) 
+								{
+									printf("from: %s\n", from_node->long_name);
+								} 
+								else 
+								{
+									printf("from: %u (inconnu)\n", msg.packet.from);
+								}
+								if(msg.packet.to == 4294967295)
+								{ 
+									printf("to: Broadcast\n");
+								}
+								else 
+								{
+									mesh_node_t *to_node = mesh_state_find_node(state, msg.packet.to);
+									if(to_node != NULL){
+									printf("to: %s \n",to_node->long_name);
+									}
+									else
+									{
+										printf("to: %u long_name inconu\n", msg.packet.to);
+									}
+								}
+							printf(" channel: %u id: %u\n", msg.packet.channel, msg.packet.id);
 							if (msg.packet.which_payload_variant == meshtastic_MeshPacket_decoded_tag)
 							{ 
 								printf("message en clair\n");
