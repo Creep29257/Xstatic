@@ -261,6 +261,16 @@ main(void)
 								break;
 							}
 							break;
+						case meshtastic_FromRadio_packet_tag:
+							printf(" from : %u, to: %u channel: %u id: %u\n", msg.packet.from, msg.packet.to, msg.packet.channel, msg.packet.id);
+							if (msg.packet.which_payload_variant == meshtastic_MeshPacket_decoded_tag)
+							{ 
+								printf("message en clair\n");
+							} 
+							else { 
+								printf("message chiffré\n");
+							}
+							break;
 					default:
 						printf("autre message, tag=%d\n", msg.which_payload_variant);
 						break;
