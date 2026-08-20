@@ -112,26 +112,59 @@ main(void)
 							}
 						}
 						break;
-					case meshtastic_FromRadio_config_complete_id_tag:
-						printf("ConfigComplete id recu %u\n", msg.config_complete_id);
-						break;
-					case meshtastic_FromRadio_rebooted_tag:
+						case meshtastic_FromRadio_config_complete_id_tag:
+							printf("ConfigComplete id recu %u\n", msg.config_complete_id);
+							break;
+						case meshtastic_FromRadio_rebooted_tag:
 					if(msg.rebooted)
 					{
 						printf("device vient d'etre rebooter \n");
 					}
 						break;
-					case meshtastic_FromRadio_queueStatus_tag:
-						printf("QueueStatus recu : res=%d free=%u maxlen=%u mesh_packet_id=%u\n",
+						case meshtastic_FromRadio_queueStatus_tag:
+							printf("QueueStatus recu : res=%d free=%u maxlen=%u mesh_packet_id=%u\n",
     msg.queueStatus.res, msg.queueStatus.free, msg.queueStatus.maxlen, msg.queueStatus.mesh_packet_id);
-						break;
+							break;
 						case meshtastic_FromRadio_fileInfo_tag:
 							printf("nom du fichier: %s, taille %u \n", msg.fileInfo.file_name, msg.fileInfo.size_bytes);
 							break;
 						case meshtastic_FromRadio_xmodemPacket_tag:
 							printf("control: %d, seq: %u, crc16: %u \n", msg.xmodemPacket.control, msg.xmodemPacket.seq, msg.xmodemPacket.crc16);
 							break;
+						case meshtastic_FromRadio_log_record_tag:
+							printf("message: %s, time: %u, source: %s, level %d \n", msg.log_record.message, msg.log_record.time, msg.log_record.source, msg.log_record.level);
+							break;
+						case meshtastic_FromRadio_channel_tag:
+    						printf("Channel recu : index=%d has_settings=%d role=%d\n",msg.channel.index, msg.channel.has_settings, msg.channel.role);
+    						break;
 
+						case meshtastic_FromRadio_lockdown_status_tag:
+    						printf("LockdownStatus recu : state=%d lock_reason=%s\n",msg.lockdown_status.state, msg.lockdown_status.lock_reason);
+    						break;
+
+						case meshtastic_FromRadio_deviceuiConfig_tag:
+    						printf("DeviceUIConfig recu : version=%u brightness=%u timeout=%u theme=%d\n",msg.deviceuiConfig.version, msg.deviceuiConfig.screen_brightness,msg.deviceuiConfig.screen_timeout, msg.deviceuiConfig.theme);
+    						break;
+
+						case meshtastic_FromRadio_metadata_tag:
+   							printf("DeviceMetadata recu : firmware=%s hw_model=%d wifi=%d bluetooth=%d ethernet=%d\n",msg.metadata.firmware_version, msg.metadata.hw_model,msg.metadata.hasWifi, msg.metadata.hasBluetooth, msg.metadata.hasEthernet);
+							break;
+
+						case meshtastic_FromRadio_region_presets_tag:
+    						printf("LoRaRegionPresetMap recu : groups_count=%u region_groups_count=%u\n",msg.region_presets.groups_count, msg.region_presets.region_groups_count);
+    						break;
+						case meshtastic_FromRadio_mqttClientProxyMessage_tag:
+    						if (msg.mqttClientProxyMessage.which_payload_variant == meshtastic_MqttClientProxyMessage_text_tag) {
+       							printf("MqttClientProxyMessage (text) : topic=%s text=%s\n",
+            					msg.mqttClientProxyMessage.topic, msg.mqttClientProxyMessage.payload_variant.text);
+    							} else 
+								{
+        							printf("payload variant binaire\n");
+								}
+   								break;
+						case meshtastic_FromRadio_clientNotification_tag:
+								printf("client notification tag message: %s\n",msg.clientNotification.message);
+								break;
 					default:
 						printf("autre message, tag=%d\n", msg.which_payload_variant);
 						break;
