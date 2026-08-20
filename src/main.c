@@ -50,7 +50,11 @@ main(void)
 	ssize_t		n;
 	struct framing_state fs = {0};
 	meshtastic_FromRadio msg = meshtastic_FromRadio_init_zero;
-
+	mesh_state_t *state = mesh_state_init();
+	if (state == NULL) {
+		fprintf(stderr, "mesh_init failed\n");
+		return 1;
+	}
 	/*
 	 * Trame ToRadio minimale, construite à la main (protobuf) : 94 c3
 	 * -- octets magiques de début de trame (START1/START2) 00 02 --
@@ -61,15 +65,12 @@ main(void)
 	 * base de nodes connus.
 	 */
 	unsigned char	handshake[] = {0x94, 0xc3, 0x00, 0x02, 0x18, 0x01};
-
 	fd = platform_serial_open("/dev/cuaU0"); //seter a la main pour le moment
 	if (fd == -1) {
 		printf("echec de l'ouverture\n");
 		return 1;
 	}
-
 	platform_serial_write(fd, handshake, sizeof(handshake));
-
 	/*
 	 * Boucle de lecture infinie : chaque appel à read() peut renvoyer
 	 * un nombre arbitraire d'octets, sans rapport avec les frontières
@@ -89,10 +90,25 @@ main(void)
 						printf("MyNodeInfo recu, mon node = %u\n", msg.my_info.my_node_num);
 						break;
 					case meshtastic_FromRadio_node_info_tag:
-						if (msg.node_info.has_user) {
-							printf("NodeInfo recu : %s\n", msg.node_info.user.long_name);
-						} else {
-							printf("NodeInfo recu (sans user info)\n");
+						{
+							mesh_node_info_t info;
+							info.num = msg.node_info.num;
+							strncpy(info.long_name, msg.node_info.user.long_name, MESH_LONG_NAME_MAX);
+							info.long_name[MESH_LONG_NAME_MAX - 1] = '\0';
+							info.hw_model = msg.node_info.user.hw_model;
+							info.position.valid = msg.node_info.has_position;
+							info.position.latitude_i = msg.node_info.position.latitude_i;
+							info.position.longitude_i = msg.node_info.position.longitude_i;
+							info.position.altitude = msg.node_info.position.altitude;
+							info.custom_name = NULL;
+
+							bool ok = mesh_state_add_or_update_node(state, &info);
+							if (!ok) {
+								fprintf(stderr, "mesh_state_add_or_update_node failed\n");
+							} else {
+								printf("Node bien créé / mis a jour, node num =%u , node long_name = %s , node hw_model= %u \n",
+								    info.num, info.long_name, info.hw_model);
+							}
 						}
 						break;
 					case meshtastic_FromRadio_config_complete_id_tag:
@@ -112,5 +128,6 @@ main(void)
 			break;
 		}
 	}
+	mesh_state_destroy(state);
 	return 0;
 }
