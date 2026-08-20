@@ -29,7 +29,7 @@
 #include "protocol/generated/meshtastic/mesh.pb.h"
 #include "third_party/nanopb/pb_decode.h"
 #include <stdio.h>
-
+#include <signal.h>
 /*
  * main.c -- point d'entrée provisoire (structure finale à venir,
  * cf design.md : fusion select() avec ui_xlib). Ouvre le port série
@@ -42,10 +42,19 @@
  * fonctions séparées et branchée sur core/mesh_state au lieu
  * des printf() directs.
  */
- 
+ volatile sig_atomic_t running = 1;
+
+ void
+handle_sigint(int sig)
+{
+    (void)sig;
+    running = 0;
+}
+
 int
 main(void)
 {
+	signal(SIGINT, handle_sigint);
 	int		fd;
 	unsigned char	buf[64];
 	ssize_t		n;
@@ -78,7 +87,7 @@ main(void)
 	 * des trames Meshtastic (une trame peut être coupée entre deux
 	 * lectures, ou plusieurs trames peuvent arriver d'un coup).
 	 */
-	for (;;) {
+	while (running) {
 		n = platform_serial_read(fd, buf, sizeof(buf));
 		if (n > 0) {
 			framing_feed(&fs, buf, n);
@@ -261,7 +270,7 @@ main(void)
 								break;
 							}
 							break;
-						case meshtastic_FromRadio_packet_tag:
+						case meshtastic_FromRadio_packet_tag: {
 							mesh_node_t *from_node = mesh_state_find_node(state, msg.packet.from);
 								if (from_node != NULL) 
 								{
@@ -294,6 +303,7 @@ main(void)
 							else { 
 								printf("message chiffré\n");
 							}
+						}
 							break;
 					default:
 						printf("autre message, tag=%d\n", msg.which_payload_variant);
