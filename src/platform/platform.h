@@ -55,4 +55,8 @@ void platform_serial_close(int fd);
  * Retourne le nombre d'octets effectivement écrits, ou -1 en cas d'erreur. */
 ssize_t platform_serial_write(int fd, const void *buf, size_t count);
 
+/* cherche le device série, remplit son chemin dans serial_path retourne 0 succés ou -1 echec
+*/
+int platform_serial_find_device(char *serial_path, size_t serial_path_size);
+
 #endif /* MESHTASTIC_PLATFORM_H */
