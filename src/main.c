@@ -77,7 +77,7 @@ main(void)
 	 * base de nodes connus.
 	 */
 	unsigned char	handshake[] = {0x94, 0xc3, 0x00, 0x02, 0x18, 0x01};
-	if(platform_serial_find_device(serial_path, sizeof(serial_path)) ==0 )
+	if(platform_serial_find_device(serial_path, sizeof(serial_path)) ==0 && strchr(directory_structure->d_name, '.') == NULL )
 		{
 			fd = platform_serial_open(serial_path);
 		} 
