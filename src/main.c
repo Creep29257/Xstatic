@@ -61,6 +61,7 @@ main(void)
 	struct framing_state fs = {0};
 	meshtastic_FromRadio msg = meshtastic_FromRadio_init_zero;
 	mesh_state_t *state = mesh_state_init();
+	char serial_path[64];
 
 	if (state == NULL) {
 		fprintf(stderr, "mesh_init failed\n");
