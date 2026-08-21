@@ -45,10 +45,12 @@ platform_serial_open(const char *device)
 {
 	int fd;
 	struct termios tty;
+	
 
 	/* Ouverture du device. O_NOCTTY évite que ce port devienne le
 	 * terminal de contrôle de notre process (comportement hérité de
 	 * l'époque des vrais terminaux physiques, à éviter ici). */
+	if(platform_serial_find_device(serial_path, sizeof(serial_path)) ==1 )
 	fd = open(device, O_RDWR | O_NOCTTY);
 	if (fd == -1) {
 		perror("open");
@@ -138,7 +140,8 @@ int platform_serial_find_device(char *serial_path, size_t serial_path_size)
 		
 		while((directory_structure = readdir(directory)) != NULL)
 		{
-			if(strncmp(directory_structure->d_name, "cuaU",4) == 0)
+			if(strncmp(directory_structure->d_name, "cuaU",4) == 0 &&
+    strchr(directory_structure->d_name, '.') == NULL)
 			{
 				printf("device found name: %s \n", directory_structure->d_name);
 				snprintf(serial_path, serial_path_size, "%s/%s", INITIAL_PATH, directory_structure->d_name);
