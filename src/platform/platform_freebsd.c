@@ -31,7 +31,8 @@
 #include <termios.h>    /* struct termios, cfmakeraw, tcgetattr, tcsetattr, B115200 */
 #include <unistd.h>     /* close(), read(), write() */
 #include <stdio.h>      /* perror() */
-
+#include <dirent.h>
+#include <string.h>
 /*
  * Ouvre et configure le port série en mode "brut" (raw mode) :
  * aucune interprétation des octets par le noyau (pas de traduction
@@ -123,4 +124,47 @@ platform_serial_close(int fd)
 	}
 
 	close(fd);
+}
+
+int platform_serial_find_device(char *serial_path, size_t serial_path_size)
+{
+	DIR* directory;
+	const char *INITIAL_PATH ="/dev";
+	directory = opendir(INITIAL_PATH);
+	if(directory != NULL)
+	{
+		struct dirent* directory_structure;
+		int serial_device_found = 0;
+		
+		while((directory_structure = readdir(directory)) != NULL)
+		{
+			if(strncmp(directory_structure->d_name, "cuaU",4) == 0)
+			{
+				printf("device found name: %s \n", directory_structure->d_name);
+				snprintf(serial_path, serial_path_size, "%s/%s", INITIAL_PATH, directory_structure->d_name);
+				serial_device_found = 1;
+			}
+			
+
+		}
+
+		if(serial_device_found ==0)
+			{
+				
+                perror(" find_device: No serial ");
+                closedir(directory);
+				return -1;
+			}
+			else 
+			{
+				closedir(directory);				
+				return 0;
+			}
+	
+	}
+	else 
+	{
+		perror("find_device, cant open directory");
+		return -1;
+	}
 }
