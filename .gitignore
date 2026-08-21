@@ -1,7 +1,10 @@
 # binaires compilés
 test
 *.o
+#fichier backup
+*.BAK
 
 # éditeurs
 *.swp
 *~
+.vscode/
