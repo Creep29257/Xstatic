@@ -21,9 +21,7 @@ Architecture (voir doc/design) :
   - Détection automatique du device série FreeBSd et Linux (primitif, testé sous BSD pas sous Linux)
 
 À faire :
-  - Détection automatique du device série (actuellement /dev/cuaU0 en dur
-    dans main.c) : parcourir les devices disponibles pour trouver le bon
-    port Meshtastic automatiquement, au lieu de le préciser à la main.
+  - port Meshtastic automatiquement, au lieu de le préciser à la main.
   - ui/ui_xlib.c : fenêtre Xlib, boucle XNextEvent.
   - Fusion select() entre le fd série et la connexion Xlib.
 
