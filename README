@@ -18,6 +18,7 @@ Architecture (voir doc/design) :
     lisibles via mesh_state : fait.
   - Gestion propre de l'arrêt (Ctrl+C / SIGINT) : fait.
   - Interface Xlib : pas commencé.
+  - Détection automatique du device série FreeBSd et Linux (primitif, testé sous BSD pas sous Linux)
 
 À faire :
   - Détection automatique du device série (actuellement /dev/cuaU0 en dur
@@ -30,10 +31,6 @@ Compilation :
   make        -- compile le binaire "test"
   make clean  -- supprime le binaire compilé
 
-Config :
-  Important mettre votre port serie dans le main.c 
-  fd = platform_serial_open("/dev/cuaU0"); sous BSD /dev/cuaU* sous Linux /dev/ttyACM* 
-  (remplacer etoile par le numero de votre port) 
 
 Note sur l'usage de l'IA :
   Ce projet est développé avec l'assistance de Claude (Anthropic), utilisé
