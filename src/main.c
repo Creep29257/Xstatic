@@ -61,6 +61,7 @@ main(void)
 	struct framing_state fs = {0};
 	meshtastic_FromRadio msg = meshtastic_FromRadio_init_zero;
 	mesh_state_t *state = mesh_state_init();
+
 	if (state == NULL) {
 		fprintf(stderr, "mesh_init failed\n");
 		return 1;
@@ -75,7 +76,15 @@ main(void)
 	 * base de nodes connus.
 	 */
 	unsigned char	handshake[] = {0x94, 0xc3, 0x00, 0x02, 0x18, 0x01};
-	fd = platform_serial_open("/dev/cuaU0"); //seter a la main pour le moment
+	if(platform_serial_find_device(serial_path, sizeof(serial_path)) ==0 )
+		{
+			fd = platform_serial_open(serial_path);
+		} 
+		else 
+		{
+		
+			return -1;
+		}
 	if (fd == -1) {
 		printf("echec de l'ouverture\n");
 		return 1;
