@@ -31,6 +31,8 @@
 #include <stddef.h>     /* pour size_t */
 #include <sys/types.h>  /* pour ssize_t */
 
+
+
 /*
  * Interface OS-agnostique pour l'accès au port série.
  * Chaque OS supporté (FreeBSD, Linux...) fournit sa propre implémentation

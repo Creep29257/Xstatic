@@ -31,6 +31,9 @@
 #include <stdint.h>
 
 #define FRAMING_MAX_PAYLOAD 512
+#define HANDSHAKE_LEN 6
+extern const unsigned char	fix_handshake_part[];
+
 
 enum framing_phase {
     FRAMING_WAIT_START1,
@@ -50,4 +53,5 @@ struct framing_state {
 
 void framing_feed(struct framing_state *state, const unsigned char *buf, size_t count);
 
+int framing_handshake_construct(unsigned char *out_handshake, size_t len);
 #endif /* MESHTASTIC_FRAMING_H */

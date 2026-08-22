@@ -28,6 +28,7 @@
 
 #include "framing.h"
 
+const unsigned char	fix_handshake_part[] = {0x94, 0xc3, 0x00, 0x02, 0x18};
 /*
  * framing_feed -- avance le parsing incrémental d'une trame Meshtastic.
  *
@@ -104,4 +105,18 @@ framing_feed(struct framing_state *state, const unsigned char *buf, size_t count
             break;
         }
     }
+}
+
+int framing_handshake_construct(unsigned char *out_handshake, size_t len)
+{
+    
+    
+    if(out_handshake == NULL || len < HANDSHAKE_LEN)
+    {
+        fprintf(stderr, "handshake_construct: invalid argument\n");
+        return -1;
+    }
+    memcpy(out_handshake, fix_handshake_part, sizeof(fix_handshake_part));
+    out_handshake[5] = arc4random_uniform(127) + 1;
+    return 0;
 }
