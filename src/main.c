@@ -65,6 +65,7 @@ main(void)
 	mesh_state_t *state = mesh_state_init();
 	char serial_path[64];
 	unsigned char handshake[HANDSHAKE_LEN];
+	int attemps= 0
 	
 	if (state == NULL) {
 		fprintf(stderr, "mesh_init failed\n");
@@ -99,13 +100,15 @@ main(void)
 	}
 
 	platform_serial_write(fd, handshake, sizeof(handshake));
-
+		while(validation_fs.frame_ready == 0 && attemps < 10)
+		{
 		n = platform_serial_read(fd, buf, sizeof(buf));
 		if (n > 0) 
 		{
     		framing_feed(&validation_fs, buf, n);
 		}
-
+		attemps++ ;
+	}
 	if (validation_fs.frame_ready) 
 		{
 			printf("device valide\n");
@@ -122,6 +125,7 @@ main(void)
 	 */
 	while (running) {
 		n = platform_serial_read(fd, buf, sizeof(buf));
+		printf("attempt %d, n=%zd\n", attemps, n);
 		if (n > 0) {
 			framing_feed(&fs, buf, n);
 			if (fs.frame_ready) {
