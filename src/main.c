@@ -51,6 +51,7 @@ handle_sigint(int sig)
     running = 0;
 }
 
+
 int
 main(void)
 {
@@ -59,10 +60,12 @@ main(void)
 	unsigned char	buf[64];
 	ssize_t		n;
 	struct framing_state fs = {0};
+	struct framing_state validation_fs = {0};
 	meshtastic_FromRadio msg = meshtastic_FromRadio_init_zero;
 	mesh_state_t *state = mesh_state_init();
 	char serial_path[64];
-
+	unsigned char handshake[HANDSHAKE_LEN];
+	
 	if (state == NULL) {
 		fprintf(stderr, "mesh_init failed\n");
 		return 1;
@@ -70,13 +73,13 @@ main(void)
 	/*
 	 * Trame ToRadio minimale, construite à la main (protobuf) : 94 c3
 	 * -- octets magiques de début de trame (START1/START2) 00 02 --
-	 * longueur du payload qui suit, en big-endian (2 octets) 18 01 --
+	 * longueur du payload qui suit, en big-endian (2 octets) 18 et numero randomisé --
 	 * payload : champ want_config_id (numéro de champ 3, encodé comme
 	 * tag=0x18) avec la valeur 1 Cette requête indique au firmware
 	 * qu'un client attend le dump complet de sa configuration et de sa
 	 * base de nodes connus.
 	 */
-	unsigned char	handshake[] = {0x94, 0xc3, 0x00, 0x02, 0x18, 0x01};
+	
 	if(platform_serial_find_device(serial_path, sizeof(serial_path)) ==0)
 		{
 			fd = platform_serial_open(serial_path);
@@ -90,7 +93,27 @@ main(void)
 		printf("echec de l'ouverture\n");
 		return 1;
 	}
+		if (framing_handshake_construct(handshake, HANDSHAKE_LEN) != 0) {
+		fprintf(stderr, "handshake construct failed\n");
+		return 1;
+	}
+
 	platform_serial_write(fd, handshake, sizeof(handshake));
+
+		n = platform_serial_read(fd, buf, sizeof(buf));
+		if (n > 0) 
+		{
+    		framing_feed(&validation_fs, buf, n);
+		}
+
+	if (validation_fs.frame_ready) 
+		{
+			printf("device valide\n");
+		}
+		 else
+		{
+			printf("pas de reponse valide\n");
+		}
 	/*
 	 * Boucle de lecture infinie : chaque appel à read() peut renvoyer
 	 * un nombre arbitraire d'octets, sans rapport avec les frontières
