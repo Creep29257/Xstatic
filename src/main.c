@@ -65,7 +65,7 @@ main(void)
 	mesh_state_t *state = mesh_state_init();
 	char serial_path[64];
 	unsigned char handshake[HANDSHAKE_LEN];
-	int attemps= 0
+	int attemps= 0;
 	
 	if (state == NULL) {
 		fprintf(stderr, "mesh_init failed\n");
