@@ -42,15 +42,232 @@
  * fonctions séparées et branchée sur core/mesh_state au lieu
  * des printf() directs.
  */
- volatile sig_atomic_t running = 1;
+volatile sig_atomic_t running = 1;
 
- void
+void
 handle_sigint(int sig)
 {
-    (void)sig;
-    running = 0;
+	(void)sig;
+	running = 0;
 }
 
+/*
+ * process_frame -- décode et affiche une trame FromRadio complète.
+ *
+ * Extrait du corps de la boucle principale pour être réutilisable à deux
+ * endroits : juste après la phase de validation du handshake (la première
+ * trame complète reçue ne doit pas être perdue), et à chaque tour de la
+ * boucle de lecture normale. Remet fs->frame_ready à 0 une fois traité.
+ */
+static void
+process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t *state)
+{
+	printf("frame_ready=1, payload_pos=%u\n", fs->payload_pos);
+	pb_istream_t stream = pb_istream_from_buffer(fs->payload, fs->payload_pos);
+	if (pb_decode(&stream, meshtastic_FromRadio_fields, msg)) {
+		switch (msg->which_payload_variant) {
+		case meshtastic_FromRadio_my_info_tag:
+			printf("MyNodeInfo recu, mon node = %u\n", msg->my_info.my_node_num);
+			break;
+		case meshtastic_FromRadio_node_info_tag:
+			{
+				mesh_node_info_t info;
+				info.num = msg->node_info.num;
+				strncpy(info.long_name, msg->node_info.user.long_name, MESH_LONG_NAME_MAX);
+				info.long_name[MESH_LONG_NAME_MAX - 1] = '\0';
+				info.hw_model = msg->node_info.user.hw_model;
+				info.position.valid = msg->node_info.has_position;
+				info.position.latitude_i = msg->node_info.position.latitude_i;
+				info.position.longitude_i = msg->node_info.position.longitude_i;
+				info.position.altitude = msg->node_info.position.altitude;
+				info.custom_name = NULL;
+
+				bool ok = mesh_state_add_or_update_node(state, &info);
+				if (!ok) {
+					fprintf(stderr, "mesh_state_add_or_update_node failed\n");
+				} else {
+					printf("Node bien créé / mis a jour, node num =%u , node long_name = %s , node hw_model= %u \n",
+					    info.num, info.long_name, info.hw_model);
+				}
+			}
+			break;
+		case meshtastic_FromRadio_config_complete_id_tag:
+			printf("ConfigComplete id recu %u\n", msg->config_complete_id);
+			break;
+		case meshtastic_FromRadio_rebooted_tag:
+			if (msg->rebooted) {
+				printf("device vient d'etre rebooter \n");
+			}
+			break;
+		case meshtastic_FromRadio_queueStatus_tag:
+			printf("QueueStatus recu : res=%d free=%u maxlen=%u mesh_packet_id=%u\n",
+			    msg->queueStatus.res, msg->queueStatus.free, msg->queueStatus.maxlen, msg->queueStatus.mesh_packet_id);
+			break;
+		case meshtastic_FromRadio_fileInfo_tag:
+			printf("nom du fichier: %s, taille %u \n", msg->fileInfo.file_name, msg->fileInfo.size_bytes);
+			break;
+		case meshtastic_FromRadio_xmodemPacket_tag:
+			printf("control: %d, seq: %u, crc16: %u \n", msg->xmodemPacket.control, msg->xmodemPacket.seq, msg->xmodemPacket.crc16);
+			break;
+		case meshtastic_FromRadio_log_record_tag:
+			printf("message: %s, time: %u, source: %s, level %d \n", msg->log_record.message, msg->log_record.time, msg->log_record.source, msg->log_record.level);
+			break;
+		case meshtastic_FromRadio_channel_tag:
+			printf("Channel recu : index=%d has_settings=%d role=%d\n", msg->channel.index, msg->channel.has_settings, msg->channel.role);
+			break;
+		case meshtastic_FromRadio_lockdown_status_tag:
+			printf("LockdownStatus recu : state=%d lock_reason=%s\n", msg->lockdown_status.state, msg->lockdown_status.lock_reason);
+			break;
+		case meshtastic_FromRadio_deviceuiConfig_tag:
+			printf("DeviceUIConfig recu : version=%u brightness=%u timeout=%u theme=%d\n", msg->deviceuiConfig.version, msg->deviceuiConfig.screen_brightness, msg->deviceuiConfig.screen_timeout, msg->deviceuiConfig.theme);
+			break;
+		case meshtastic_FromRadio_metadata_tag:
+			printf("DeviceMetadata recu : firmware=%s hw_model=%d wifi=%d bluetooth=%d ethernet=%d\n", msg->metadata.firmware_version, msg->metadata.hw_model, msg->metadata.hasWifi, msg->metadata.hasBluetooth, msg->metadata.hasEthernet);
+			break;
+		case meshtastic_FromRadio_region_presets_tag:
+			printf("LoRaRegionPresetMap recu : groups_count=%u region_groups_count=%u\n", msg->region_presets.groups_count, msg->region_presets.region_groups_count);
+			break;
+		case meshtastic_FromRadio_mqttClientProxyMessage_tag:
+			if (msg->mqttClientProxyMessage.which_payload_variant == meshtastic_MqttClientProxyMessage_text_tag) {
+				printf("MqttClientProxyMessage (text) : topic=%s text=%s\n",
+				    msg->mqttClientProxyMessage.topic, msg->mqttClientProxyMessage.payload_variant.text);
+			} else {
+				printf("payload variant binaire\n");
+			}
+			break;
+		case meshtastic_FromRadio_clientNotification_tag:
+			printf("client notification tag message: %s\n", msg->clientNotification.message);
+			break;
+		case meshtastic_FromRadio_config_tag:
+			switch (msg->config.which_payload_variant) {
+			case meshtastic_Config_device_tag:
+				printf("Config recu : sous-type=device\n");
+				break;
+			case meshtastic_Config_position_tag:
+				printf("Config recu : sous-type=position\n");
+				break;
+			case meshtastic_Config_power_tag:
+				printf("Config recu : sous-type=power\n");
+				break;
+			case meshtastic_Config_network_tag:
+				printf("Config recu : sous-type=network\n");
+				break;
+			case meshtastic_Config_display_tag:
+				printf("Config recu : sous-type=display\n");
+				break;
+			case meshtastic_Config_lora_tag:
+				printf("Config recu : sous-type=lora\n");
+				break;
+			case meshtastic_Config_bluetooth_tag:
+				printf("Config recu : sous-type=bluetooth\n");
+				break;
+			case meshtastic_Config_security_tag:
+				printf("Config recu : sous-type=security\n");
+				break;
+			case meshtastic_Config_sessionkey_tag:
+				printf("Config recu : sous-type=sessionkey\n");
+				break;
+			case meshtastic_Config_device_ui_tag:
+				printf("Config recu : sous-type=device_ui\n");
+				break;
+			default:
+				printf("Config recu : sous-type inconnu, tag=%d\n", msg->config.which_payload_variant);
+				break;
+			}
+			break;
+		case meshtastic_FromRadio_moduleConfig_tag:
+			switch (msg->moduleConfig.which_payload_variant) {
+			case meshtastic_ModuleConfig_mqtt_tag:
+				printf("ModuleConfig recu : sous-type=mqtt\n");
+				break;
+			case meshtastic_ModuleConfig_serial_tag:
+				printf("ModuleConfig recu : sous-type=serial\n");
+				break;
+			case meshtastic_ModuleConfig_external_notification_tag:
+				printf("ModuleConfig recu : sous-type=external_notification\n");
+				break;
+			case meshtastic_ModuleConfig_store_forward_tag:
+				printf("ModuleConfig recu : sous-type=store_forward\n");
+				break;
+			case meshtastic_ModuleConfig_range_test_tag:
+				printf("ModuleConfig recu : sous-type=range_test\n");
+				break;
+			case meshtastic_ModuleConfig_telemetry_tag:
+				printf("ModuleConfig recu : sous-type=telemetry\n");
+				break;
+			case meshtastic_ModuleConfig_canned_message_tag:
+				printf("ModuleConfig recu : sous-type=canned_message\n");
+				break;
+			case meshtastic_ModuleConfig_audio_tag:
+				printf("ModuleConfig recu : sous-type=audio\n");
+				break;
+			case meshtastic_ModuleConfig_remote_hardware_tag:
+				printf("ModuleConfig recu : sous-type=remote_hardware\n");
+				break;
+			case meshtastic_ModuleConfig_neighbor_info_tag:
+				printf("ModuleConfig recu : sous-type=neighbor_info\n");
+				break;
+			case meshtastic_ModuleConfig_ambient_lighting_tag:
+				printf("ModuleConfig recu : sous-type=ambient_lighting\n");
+				break;
+			case meshtastic_ModuleConfig_detection_sensor_tag:
+				printf("ModuleConfig recu : sous-type=detection_sensor\n");
+				break;
+			case meshtastic_ModuleConfig_paxcounter_tag:
+				printf("ModuleConfig recu : sous-type=paxcounter\n");
+				break;
+			case meshtastic_ModuleConfig_statusmessage_tag:
+				printf("ModuleConfig recu : sous-type=statusmessage\n");
+				break;
+			case meshtastic_ModuleConfig_traffic_management_tag:
+				printf("ModuleConfig recu : sous-type=traffic_management\n");
+				break;
+			case meshtastic_ModuleConfig_tak_tag:
+				printf("ModuleConfig recu : sous-type=tak\n");
+				break;
+			case meshtastic_ModuleConfig_mesh_beacon_tag:
+				printf("ModuleConfig recu : sous-type=mesh_beacon\n");
+				break;
+			default:
+				printf("ModuleConfig recu : sous-type inconnu, tag=%d\n", msg->moduleConfig.which_payload_variant);
+				break;
+			}
+			break;
+		case meshtastic_FromRadio_packet_tag:
+			{
+				mesh_node_t *from_node = mesh_state_find_node(state, msg->packet.from);
+				if (from_node != NULL) {
+					printf("from: %s\n", from_node->long_name);
+				} else {
+					printf("from: %u (inconnu)\n", msg->packet.from);
+				}
+				if (msg->packet.to == 4294967295) {
+					printf("to: Broadcast\n");
+				} else {
+					mesh_node_t *to_node = mesh_state_find_node(state, msg->packet.to);
+					if (to_node != NULL) {
+						printf("to: %s \n", to_node->long_name);
+					} else {
+						printf("to: %u long_name inconu\n", msg->packet.to);
+					}
+				}
+				printf("channel: %u id: %u\n", msg->packet.channel, msg->packet.id);
+				if (msg->packet.which_payload_variant == meshtastic_MeshPacket_decoded_tag) {
+					printf("message en clair\n");
+				} else {
+					printf("message chiffré\n");
+				}
+			}
+			break;
+		default:
+			printf("autre message, tag=%d\n", msg->which_payload_variant);
+			break;
+		}
+	} else {
+		printf("echec\n");
+	}
+	fs->frame_ready = 0;
+}
 
 int
 main(void)
@@ -60,64 +277,65 @@ main(void)
 	unsigned char	buf[64];
 	ssize_t		n;
 	struct framing_state fs = {0};
-	struct framing_state validation_fs = {0};
 	meshtastic_FromRadio msg = meshtastic_FromRadio_init_zero;
 	mesh_state_t *state = mesh_state_init();
 	char serial_path[64];
 	unsigned char handshake[HANDSHAKE_LEN];
-	int attemps= 0;
-	
+	int attemps = 0;
+
 	if (state == NULL) {
 		fprintf(stderr, "mesh_init failed\n");
 		return 1;
 	}
 	/*
-	 * Trame ToRadio minimale, construite à la main (protobuf) : 94 c3
-	 * -- octets magiques de début de trame (START1/START2) 00 02 --
-	 * longueur du payload qui suit, en big-endian (2 octets) 18 et numero randomisé --
-	 * payload : champ want_config_id (numéro de champ 3, encodé comme
-	 * tag=0x18) avec la valeur 1 Cette requête indique au firmware
-	 * qu'un client attend le dump complet de sa configuration et de sa
-	 * base de nodes connus.
+	 * Trame ToRadio minimale (protobuf) : 94 c3 -- octets magiques de
+	 * début de trame (START1/START2) 00 02 -- longueur du payload qui
+	 * suit, en big-endian (2 octets) 18 + valeur randomisée -- payload :
+	 * champ want_config_id (numéro de champ 3, encodé comme tag=0x18)
+	 * avec une valeur randomisée par run (voir framing_handshake_construct,
+	 * nécessaire car le firmware garde en RAM les want_config_id déjà
+	 * traités). Cette requête indique au firmware qu'un client attend le
+	 * dump complet de sa configuration et de sa base de nodes connus.
 	 */
-	
-	if(platform_serial_find_device(serial_path, sizeof(serial_path)) ==0)
-		{
-			fd = platform_serial_open(serial_path);
-		} 
-		else 
-		{
-		
-			return -1;
-		}
+
+	if (platform_serial_find_device(serial_path, sizeof(serial_path)) == 0) {
+		fd = platform_serial_open(serial_path);
+	} else {
+		return -1;
+	}
 	if (fd == -1) {
 		printf("echec de l'ouverture\n");
 		return 1;
 	}
-		if (framing_handshake_construct(handshake, HANDSHAKE_LEN) != 0) {
+	if (framing_handshake_construct(handshake, HANDSHAKE_LEN) != 0) {
 		fprintf(stderr, "handshake construct failed\n");
 		return 1;
 	}
 
 	platform_serial_write(fd, handshake, sizeof(handshake));
-		while(validation_fs.frame_ready == 0 && attemps < 300)
-		{
+
+	/*
+	 * Phase de validation : le DTR (voir platform_serial_open) provoque
+	 * un reboot matériel du device, qui recrache d'abord un long log de
+	 * démarrage avant la première trame protobuf structurée -- d'où la
+	 * limite haute (300 tentatives de lecture). fs (le même state que
+	 * la boucle principale plus bas) est utilisé directement pour ne pas
+	 * perdre le début du flux entre validation et lecture normale.
+	 */
+	while (fs.frame_ready == 0 && attemps < 300) {
 		n = platform_serial_read(fd, buf, sizeof(buf));
-		printf("attempt %d, n=%zd\n", attemps, n);
-		if (n > 0) 
-		{
-    		framing_feed(&validation_fs, buf, n);
+		if (n > 0) {
+			framing_feed(&fs, buf, n);
 		}
-		attemps++ ;
+		attemps++;
 	}
-	if (validation_fs.frame_ready) 
-		{
-			printf("device valide\n");
-		}
-		 else
-		{
-			printf("pas de reponse valide\n");
-		}
+	if (fs.frame_ready) {
+		printf("device valide\n");
+		process_frame(&fs, &msg, state);
+	} else {
+		printf("pas de reponse valide\n");
+	}
+
 	/*
 	 * Boucle de lecture infinie : chaque appel à read() peut renvoyer
 	 * un nombre arbitraire d'octets, sans rapport avec les frontières
@@ -126,231 +344,10 @@ main(void)
 	 */
 	while (running) {
 		n = platform_serial_read(fd, buf, sizeof(buf));
-		
 		if (n > 0) {
 			framing_feed(&fs, buf, n);
 			if (fs.frame_ready) {
-				printf("frame_ready=1, payload_pos=%u\n", fs.payload_pos);
-				pb_istream_t	stream = pb_istream_from_buffer(fs.payload, fs.payload_pos);
-				if (pb_decode(&stream, meshtastic_FromRadio_fields, &msg)) {
-					switch (msg.which_payload_variant) {
-					case meshtastic_FromRadio_my_info_tag:
-						printf("MyNodeInfo recu, mon node = %u\n", msg.my_info.my_node_num);
-						break;
-					case meshtastic_FromRadio_node_info_tag:
-						{
-							mesh_node_info_t info;
-							info.num = msg.node_info.num;
-							strncpy(info.long_name, msg.node_info.user.long_name, MESH_LONG_NAME_MAX);
-							info.long_name[MESH_LONG_NAME_MAX - 1] = '\0';
-							info.hw_model = msg.node_info.user.hw_model;
-							info.position.valid = msg.node_info.has_position;
-							info.position.latitude_i = msg.node_info.position.latitude_i;
-							info.position.longitude_i = msg.node_info.position.longitude_i;
-							info.position.altitude = msg.node_info.position.altitude;
-							info.custom_name = NULL;
-
-							bool ok = mesh_state_add_or_update_node(state, &info);
-							if (!ok) {
-								fprintf(stderr, "mesh_state_add_or_update_node failed\n");
-							} else {
-								printf("Node bien créé / mis a jour, node num =%u , node long_name = %s , node hw_model= %u \n",
-								    info.num, info.long_name, info.hw_model);
-							}
-						}
-						break;
-						case meshtastic_FromRadio_config_complete_id_tag:
-							printf("ConfigComplete id recu %u\n", msg.config_complete_id);
-							break;
-						case meshtastic_FromRadio_rebooted_tag:
-					if(msg.rebooted)
-					{
-						printf("device vient d'etre rebooter \n");
-					}
-						break;
-						case meshtastic_FromRadio_queueStatus_tag:
-							printf("QueueStatus recu : res=%d free=%u maxlen=%u mesh_packet_id=%u\n",
-    msg.queueStatus.res, msg.queueStatus.free, msg.queueStatus.maxlen, msg.queueStatus.mesh_packet_id);
-							break;
-						case meshtastic_FromRadio_fileInfo_tag:
-							printf("nom du fichier: %s, taille %u \n", msg.fileInfo.file_name, msg.fileInfo.size_bytes);
-							break;
-						case meshtastic_FromRadio_xmodemPacket_tag:
-							printf("control: %d, seq: %u, crc16: %u \n", msg.xmodemPacket.control, msg.xmodemPacket.seq, msg.xmodemPacket.crc16);
-							break;
-						case meshtastic_FromRadio_log_record_tag:
-							printf("message: %s, time: %u, source: %s, level %d \n", msg.log_record.message, msg.log_record.time, msg.log_record.source, msg.log_record.level);
-							break;
-						case meshtastic_FromRadio_channel_tag:
-    						printf("Channel recu : index=%d has_settings=%d role=%d\n",msg.channel.index, msg.channel.has_settings, msg.channel.role);
-    						break;
-
-						case meshtastic_FromRadio_lockdown_status_tag:
-    						printf("LockdownStatus recu : state=%d lock_reason=%s\n",msg.lockdown_status.state, msg.lockdown_status.lock_reason);
-    						break;
-
-						case meshtastic_FromRadio_deviceuiConfig_tag:
-    						printf("DeviceUIConfig recu : version=%u brightness=%u timeout=%u theme=%d\n",msg.deviceuiConfig.version, msg.deviceuiConfig.screen_brightness,msg.deviceuiConfig.screen_timeout, msg.deviceuiConfig.theme);
-    						break;
-
-						case meshtastic_FromRadio_metadata_tag:
-   							printf("DeviceMetadata recu : firmware=%s hw_model=%d wifi=%d bluetooth=%d ethernet=%d\n",msg.metadata.firmware_version, msg.metadata.hw_model,msg.metadata.hasWifi, msg.metadata.hasBluetooth, msg.metadata.hasEthernet);
-							break;
-
-						case meshtastic_FromRadio_region_presets_tag:
-    						printf("LoRaRegionPresetMap recu : groups_count=%u region_groups_count=%u\n",msg.region_presets.groups_count, msg.region_presets.region_groups_count);
-    						break;
-						case meshtastic_FromRadio_mqttClientProxyMessage_tag:
-    						if (msg.mqttClientProxyMessage.which_payload_variant == meshtastic_MqttClientProxyMessage_text_tag) {
-       							printf("MqttClientProxyMessage (text) : topic=%s text=%s\n",
-            					msg.mqttClientProxyMessage.topic, msg.mqttClientProxyMessage.payload_variant.text);
-    							} else 
-								{
-        							printf("payload variant binaire\n");
-								}
-   								break;
-								
-						case meshtastic_FromRadio_clientNotification_tag:
-								printf("client notification tag message: %s\n",msg.clientNotification.message);
-								break;
-						case meshtastic_FromRadio_config_tag:
-    						switch (msg.config.which_payload_variant) {
-    							case meshtastic_Config_device_tag:
-        							printf("Config recu : sous-type=device\n");
-        							break;
-    							case meshtastic_Config_position_tag:
-        							printf("Config recu : sous-type=position\n");
-        							break;
-    							case meshtastic_Config_power_tag:
-        							printf("Config recu : sous-type=power\n");
-        							break;
-    							case meshtastic_Config_network_tag:
-        							printf("Config recu : sous-type=network\n");
-        							break;
-    							case meshtastic_Config_display_tag:
-        							printf("Config recu : sous-type=display\n");
-        							break;
-    							case meshtastic_Config_lora_tag:
-        							printf("Config recu : sous-type=lora\n");
-        							break;
-    							case meshtastic_Config_bluetooth_tag:
-        						printf("Config recu : sous-type=bluetooth\n");
-        							break;
-    							case meshtastic_Config_security_tag:
-									printf("Config recu : sous-type=security\n");
-									break;
-								case meshtastic_Config_sessionkey_tag:
-									printf("Config recu : sous-type=sessionkey\n");
-									break;
-								case meshtastic_Config_device_ui_tag:
-									printf("Config recu : sous-type=device_ui\n");
-									break;
-								default:
-									printf("Config recu : sous-type inconnu, tag=%d\n", msg.config.which_payload_variant);
-									break;
-								}
-								break;
-						case meshtastic_FromRadio_moduleConfig_tag:
-							switch (msg.moduleConfig.which_payload_variant) {
-							case meshtastic_ModuleConfig_mqtt_tag:
-								printf("ModuleConfig recu : sous-type=mqtt\n");
-								break;
-							case meshtastic_ModuleConfig_serial_tag:
-								printf("ModuleConfig recu : sous-type=serial\n");
-								break;
-							case meshtastic_ModuleConfig_external_notification_tag:
-								printf("ModuleConfig recu : sous-type=external_notification\n");
-								break;
-							case meshtastic_ModuleConfig_store_forward_tag:
-								printf("ModuleConfig recu : sous-type=store_forward\n");
-								break;
-							case meshtastic_ModuleConfig_range_test_tag:
-								printf("ModuleConfig recu : sous-type=range_test\n");
-								break;
-							case meshtastic_ModuleConfig_telemetry_tag:
-								printf("ModuleConfig recu : sous-type=telemetry\n");
-								break;
-							case meshtastic_ModuleConfig_canned_message_tag:
-								printf("ModuleConfig recu : sous-type=canned_message\n");
-								break;
-							case meshtastic_ModuleConfig_audio_tag:
-								printf("ModuleConfig recu : sous-type=audio\n");
-								break;
-							case meshtastic_ModuleConfig_remote_hardware_tag:
-								printf("ModuleConfig recu : sous-type=remote_hardware\n");
-								break;
-							case meshtastic_ModuleConfig_neighbor_info_tag:
-								printf("ModuleConfig recu : sous-type=neighbor_info\n");
-								break;
-							case meshtastic_ModuleConfig_ambient_lighting_tag:
-								printf("ModuleConfig recu : sous-type=ambient_lighting\n");
-								break;
-							case meshtastic_ModuleConfig_detection_sensor_tag:
-								printf("ModuleConfig recu : sous-type=detection_sensor\n");
-								break;
-							case meshtastic_ModuleConfig_paxcounter_tag:
-								printf("ModuleConfig recu : sous-type=paxcounter\n");
-								break;
-							case meshtastic_ModuleConfig_statusmessage_tag:
-								printf("ModuleConfig recu : sous-type=statusmessage\n");
-								break;
-							case meshtastic_ModuleConfig_traffic_management_tag:
-								printf("ModuleConfig recu : sous-type=traffic_management\n");
-								break;
-							case meshtastic_ModuleConfig_tak_tag:
-								printf("ModuleConfig recu : sous-type=tak\n");
-								break;
-							case meshtastic_ModuleConfig_mesh_beacon_tag:
-								printf("ModuleConfig recu : sous-type=mesh_beacon\n");
-								break;
-							default:
-								printf("ModuleConfig recu : sous-type inconnu, tag=%d\n", msg.moduleConfig.which_payload_variant);
-								break;
-							}
-							break;
-						case meshtastic_FromRadio_packet_tag: {
-							mesh_node_t *from_node = mesh_state_find_node(state, msg.packet.from);
-								if (from_node != NULL) 
-								{
-									printf("from: %s\n", from_node->long_name);
-								} 
-								else 
-								{
-									printf("from: %u (inconnu)\n", msg.packet.from);
-								}
-								if(msg.packet.to == 4294967295)
-								{ 
-									printf("to: Broadcast\n");
-								}
-								else 
-								{
-									mesh_node_t *to_node = mesh_state_find_node(state, msg.packet.to);
-									if(to_node != NULL){
-									printf("to: %s \n",to_node->long_name);
-									}
-									else
-									{
-										printf("to: %u long_name inconu\n", msg.packet.to);
-									}
-								}
-							printf("channel: %u id: %u\n", msg.packet.channel, msg.packet.id);
-							if (msg.packet.which_payload_variant == meshtastic_MeshPacket_decoded_tag)
-							{ 
-								printf("message en clair\n");
-							} 
-							else { 
-								printf("message chiffré\n");
-							}
-						}
-							break;
-					default:
-						printf("autre message, tag=%d\n", msg.which_payload_variant);
-						break;
-					}
-				} else {
-					printf("echec\n");
-				}
-				fs.frame_ready = 0;
+				process_frame(&fs, &msg, state);
 			}
 		} else if (n == -1) {
 			perror("read");
