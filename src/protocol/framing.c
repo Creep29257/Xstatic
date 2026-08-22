@@ -27,6 +27,9 @@
  */
 
 #include "framing.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 const unsigned char	fix_handshake_part[] = {0x94, 0xc3, 0x00, 0x02, 0x18};
 /*
