@@ -30,6 +30,7 @@
 #include "third_party/nanopb/pb_decode.h"
 #include <stdio.h>
 #include <signal.h>
+#include <unistd.h>
 /*
  * main.c -- point d'entrée provisoire (structure finale à venir,
  * cf design.md : fusion select() avec ui_xlib). Ouvre le port série
@@ -282,6 +283,7 @@ main(void)
 	char serial_path[64];
 	unsigned char handshake[HANDSHAKE_LEN];
 	int attemps = 0;
+	unsigned char wake[32];
 
 	if (state == NULL) {
 		fprintf(stderr, "mesh_init failed\n");
@@ -311,21 +313,25 @@ main(void)
 		fprintf(stderr, "handshake construct failed\n");
 		return 1;
 	}
-	printf("want_config_id envoye = %d\n", handshake[5]);
+
+	memset(wake, 0xc3, sizeof(wake));
+	platform_serial_write(fd, wake, sizeof(wake));
+	usleep(100000);
 
 	platform_serial_write(fd, handshake, sizeof(handshake));
-
+	
 	/*
-	 * Phase de validation : le DTR (voir platform_serial_open) provoque
-	 * un reboot matériel du device, qui recrache d'abord un long log de
-	 * démarrage avant la première trame protobuf structurée -- d'où la
-	 * limite haute (300 tentatives de lecture). fs (le même state que
-	 * la boucle principale plus bas) est utilisé directement pour ne pas
-	 * perdre le début du flux entre validation et lecture normale.
-	 */
-	while (fs.frame_ready == 0 && attemps < 300) {
+ 	* Phase de validation : on envoie d'abord 32 octets 0xc3 (technique du
+ 	* client officiel meshtastic-python) pour réveiller le device et
+ 	* resynchroniser sa machine à états de lecture, avant le vrai handshake.
+ 	* Sans ce réveil, le firmware ne renvoie pas le dump complet de sa
+ 	* config/nodeDB. fs (le même state que la boucle principale plus bas)
+ 	* est utilisé directement pour ne pas perdre le début du flux entre
+ 	* validation et lecture normale.
+ 	*/
+
+	while (fs.frame_ready == 0 && attemps < 30) {
 		n = platform_serial_read(fd, buf, sizeof(buf));
-		printf("attempt %d, n=%zd\n", attemps, n);
 		if (n > 0) {
 			framing_feed(&fs, buf, n);
 		}

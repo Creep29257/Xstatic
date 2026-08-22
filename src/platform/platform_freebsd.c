@@ -33,7 +33,6 @@
 #include <stdio.h>      /* perror() */
 #include <dirent.h>
 #include <string.h>
-#include <sys/ioctl.h>
 /*
  * Ouvre et configure le port série en mode "brut" (raw mode) :
  * aucune interprétation des octets par le noyau (pas de traduction
@@ -46,7 +45,6 @@ platform_serial_open(const char *device)
 {
 	int fd;
 	struct termios tty;
-	int dtr_flag = TIOCM_DTR;
 	
 
 	/* Ouverture du device. O_NOCTTY évite que ce port devienne le
