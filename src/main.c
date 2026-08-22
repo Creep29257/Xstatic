@@ -311,6 +311,7 @@ main(void)
 		fprintf(stderr, "handshake construct failed\n");
 		return 1;
 	}
+	printf("want_config_id envoye = %d\n", handshake[5]);
 
 	platform_serial_write(fd, handshake, sizeof(handshake));
 
@@ -324,6 +325,7 @@ main(void)
 	 */
 	while (fs.frame_ready == 0 && attemps < 300) {
 		n = platform_serial_read(fd, buf, sizeof(buf));
+		printf("attempt %d, n=%zd\n", attemps, n);
 		if (n > 0) {
 			framing_feed(&fs, buf, n);
 		}
