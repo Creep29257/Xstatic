@@ -103,6 +103,7 @@ main(void)
 		while(validation_fs.frame_ready == 0 && attemps < 10)
 		{
 		n = platform_serial_read(fd, buf, sizeof(buf));
+		printf("attempt %d, n=%zd\n", attemps, n);
 		if (n > 0) 
 		{
     		framing_feed(&validation_fs, buf, n);
@@ -125,7 +126,7 @@ main(void)
 	 */
 	while (running) {
 		n = platform_serial_read(fd, buf, sizeof(buf));
-		printf("attempt %d, n=%zd\n", attemps, n);
+		
 		if (n > 0) {
 			framing_feed(&fs, buf, n);
 			if (fs.frame_ready) {
