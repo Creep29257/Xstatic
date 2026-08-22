@@ -100,7 +100,7 @@ main(void)
 	}
 
 	platform_serial_write(fd, handshake, sizeof(handshake));
-		while(validation_fs.frame_ready == 0 && attemps < 50)
+		while(validation_fs.frame_ready == 0 && attemps < 300)
 		{
 		n = platform_serial_read(fd, buf, sizeof(buf));
 		printf("attempt %d, n=%zd\n", attemps, n);
