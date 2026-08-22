@@ -72,7 +72,7 @@ platform_serial_open(const char *device)
 	 * l'interprétation des caractères de contrôle, etc. Modifie tty
 	 * uniquement en mémoire, rien n'est encore appliqué au device. */
 	cfmakeraw(&tty);
-
+	tty.c_cflag &= ~HUPCL;
 	/* Fixe la vitesse de la liaison série à 115200 bauds, celle
 	 * qu'utilise le firmware Meshtastic. Toujours en mémoire pour
 	 * l'instant. */
@@ -90,9 +90,6 @@ platform_serial_open(const char *device)
 		close(fd);
 		return -1;
 	}
-	ioctl(fd, TIOCMBIC, &dtr_flag);
-	usleep(250000);                       /* pause courte */
-	ioctl(fd, TIOCMBIS, &dtr_flag);
 
 	return fd;
 }
