@@ -253,11 +253,26 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t 
 					}
 				}
 				printf("channel: %u id: %u\n", msg->packet.channel, msg->packet.id);
-				if (msg->packet.which_payload_variant == meshtastic_MeshPacket_decoded_tag) {
-					printf("message en clair\n");
-				} else {
-					printf("message chiffré\n");
-				}
+				if (msg->packet.which_payload_variant == meshtastic_MeshPacket_decoded_tag) 
+				{
+				printf("message en clair\n");
+						size_t text_size;
+						text_size = sizeof(msg->packet.decoded.payload.bytes) +1;
+					if (msg->packet.decoded.portnum == meshtastic_PortNum_TEXT_MESSAGE_APP) {
+						if (msg->packet.decoded.payload.size <= (text_size -1)) 
+						{
+							
+							char text[text_size];
+							memcpy(text, msg->packet.decoded.payload.bytes, msg->packet.decoded.payload.size);
+							text[msg->packet.decoded.payload.size] = '\0';
+							printf("texte: %s\n", text);
+						}
+					}
+			} 
+			else 
+			{
+				printf("message chiffré\n");
+			}
 			}
 			break;
 		default:
