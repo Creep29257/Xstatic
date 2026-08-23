@@ -31,6 +31,9 @@
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
+
+
+#define NAME_BUF_SIZE sizeof(((mesh_node_t *)0)->long_name)
 /*
  * main.c -- point d'entrée provisoire (structure finale à venir,
  * cf design.md : fusion select() avec ui_xlib). Ouvre le port série
@@ -237,19 +240,27 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t 
 		case meshtastic_FromRadio_packet_tag:
 			{
 				mesh_node_t *from_node = mesh_state_find_node(state, msg->packet.from);
+				char buffer_from[NAME_BUF_SIZE];
+				char buffer_to[NAME_BUF_SIZE];
 				if (from_node != NULL) {
-					printf("from: %s\n", from_node->long_name);
-				} else {
-					printf("from: %u (inconnu)\n", msg->packet.from);
+				snprintf(buffer_from, sizeof(buffer_from), "%s", from_node->long_name);
+				} 
+				else
+				{
+					snprintf(buffer_from,sizeof(buffer_from), "inconnu: %u", msg->packet.from);
+					
 				}
 				if (msg->packet.to == 4294967295) {
-					printf("to: Broadcast\n");
+					snprintf(buffer_to, sizeof(buffer_to), "Broadcast");
+					
 				} else {
 					mesh_node_t *to_node = mesh_state_find_node(state, msg->packet.to);
 					if (to_node != NULL) {
-						printf("to: %s \n", to_node->long_name);
+						snprintf(buffer_to, sizeof(buffer_to), "%s",to_node->long_name);
+						
 					} else {
-						printf("to: %u long_name inconu\n", msg->packet.to);
+						snprintf(buffer_to, sizeof(buffer_to), " %u long_name inconu", msg->packet.to);
+						
 					}
 				}
 				printf("channel: %u id: %u\n", msg->packet.channel, msg->packet.id);
@@ -265,13 +276,13 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t 
 							char text[text_size];
 							memcpy(text, msg->packet.decoded.payload.bytes, msg->packet.decoded.payload.size);
 							text[msg->packet.decoded.payload.size] = '\0';
-							printf("texte: %s\n", text);
+							printf("from: %s to: %s msg: %s\n", buffer_from, buffer_to, text);
 						}
 					}
 			} 
 			else 
 			{
-				printf("message chiffré\n");
+				printf("message chiffré from: %s to: %s\n",buffer_from, buffer_to);
 			}
 			}
 			break;
