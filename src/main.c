@@ -39,7 +39,7 @@ typedef enum {
 	SEND_OPTION,
 	USAGE_OPTION
 } option_mode_t;
-option_mode_top tion;
+option_mode_t option;
 /*
  * main.c -- point d'entrée provisoire (structure finale à venir,
  * cf design.md : fusion select() avec ui_xlib). Ouvre le port série
@@ -471,7 +471,12 @@ main(int argc, char *argv[])
 				{
 					return -1;
 				}
-		
+			unsigned char final_frame[FRAMING_MAX_PAYLOAD + 4];
+			if (framing_message_construct(encoded_buffer, encoded_len, final_frame, sizeof(final_frame)) == -1)
+				{
+    				return -1;
+				}
+			platform_serial_write(fd, final_frame, encoded_len + 4);
 			break;
 		}
 
