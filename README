@@ -19,6 +19,11 @@ Architecture (voir doc/design) :
   - Gestion propre de l'arrêt (Ctrl+C / SIGINT) : fait.
   - Interface Xlib : pas commencé.
   - Détection automatique du device série FreeBSd et Linux (primitif, testé sous BSD pas sous Linux)
+  - Envoi de messages (case -s) : construction ToRadio (to_radio_construct),
+    encodage protobuf (to_radio_encode), emballage framing variable
+    (framing_message_construct) et écriture port série : fait, compile,
+    pas encore testé sur device réel. Résolution du destinataire par num
+    uniquement pour l'instant (pas par nom).
 
 À faire :
   - port Meshtastic automatiquement, au lieu de le préciser à la main.
@@ -38,7 +43,9 @@ Note sur l'usage de l'IA :
   générateur de code. Quelques fichiers annexes (Makefile, scripts, docs)
   ont pu être générés directement par l'IA.
 
-v0.1 cible : lire le port série, décoder les NodeInfo reçus, les afficher
-en liste dans une fenêtre Xlib basique.
+v0.1 cible (ordre révisé) : lire le port série, décoder les NodeInfo reçus,
+envoyer un message texte en ligne de commande. L'affichage dans une fenêtre
+Xlib est différé à une version ultérieure — priorité à un client CLI
+fonctionnel en lecture et en écriture avant l'interface graphique.
 
 Licence : BSD 2-clause, voir LICENSE.

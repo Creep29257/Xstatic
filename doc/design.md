@@ -103,18 +103,42 @@ du changement d'état éventuel.
 - `cc` invoqué en direct dans les commandes/Makefile plutôt que `gcc`
   ou `clang` en dur, pour rester portable FreeBSD/Linux.
 
-## Prochaines étapes (mise à jour)
+## Prochaines étapes (ordre révisé v0.1)
 
-- `core/mesh_state.c` : implémenter la struct interne (liste chaînée
-  de nodes), et les 4 fonctions déclarées dans mesh_state.h (init,
-  destroy, add_or_update_node, find_node). Logique métier pure, sans
-  dépendance OS/UI.
-- Brancher `mesh_state` dans `main.c` à la place des printf() directs.
+- ✅ `core/mesh_state.c` : fait.
+- ✅ Envoi (`ToRadio` → protobuf → framing → port série) : fait, compile,
+  pas encore testé sur device réel. Voir détail ci-dessous.
 - Mapper les tags FromRadio restants (config, moduleConfig, channel,
   metadata, queueStatus...) à des affichages utiles.
-- `ui/ui_xlib.c` : fenêtre Xlib, boucle d'événements, fusion avec le
-  fd série via `select()`.
-- Un vrai Makefile (la commande de compilation devient longue).
+- `ui/ui_xlib.c` : différé après l'envoi (inversion de priorité v0.1 —
+  un client CLI complet, lecture + écriture, passe avant l'interface
+  graphique).
+- Fusion `select()` : reste le point le plus délicat, nécessaire pour
+  l'UI (fd Xlib + fd série) et pour un éventuel mode envoi+écoute
+  simultané côté CLI (actuellement l'envoi est fire-and-forget : le
+  programme envoie et quitte, sans lire la réponse).
+
+## protocol/ — construction ToRadio (envoi)
+
+Symétrique du décodage `FromRadio`, dans `main.c` :
+
+- `to_radio_construct(char *to_str, char *message, meshtastic_ToRadio *out)`
+  remplit `ToRadio.packet` (`to` via `strtoul`, `from=0`, `channel=0`) et
+  `packet.decoded` (`portnum=TEXT_MESSAGE_APP`, `payload` via `memcpy` avec
+  garde sur la taille — `Data.payload` est un `PB_BYTES_ARRAY_T(233)`, pas
+  null-terminé). Paramètre de sortie par pointeur, retour `int` (0/-1),
+  même pattern que `framing_handshake_construct`.
+- `to_radio_encode(meshtastic_ToRadio *to_radio, uint8_t *out_buffer, size_t *out_len)`
+  appelle `pb_encode` sur `meshtastic_ToRadio_fields` et récupère la taille
+  réelle via `stream.bytes_written`.
+- `framing_message_construct(unsigned char *payload, size_t payload_len, unsigned char *out_frame, size_t out_frame_len)`
+  (dans `framing.c`, symétrique de `framing_feed`) emballe un payload de
+  taille variable avec magic bytes + longueur 2 octets big-endian.
+
+Résolution du destinataire par num uniquement pour l'instant — la
+résolution par nom (`long_name`) nécessiterait que `mesh_state` soit
+peuplé avant l'envoi, ce qui suppose une phase de lecture préalable
+(actuellement absente du mode envoi).
 
 ## Licence
 
