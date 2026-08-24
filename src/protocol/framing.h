@@ -29,6 +29,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define FRAMING_MAX_PAYLOAD 512
 #define HANDSHAKE_LEN 6
@@ -54,4 +56,6 @@ struct framing_state {
 void framing_feed(struct framing_state *state, const unsigned char *buf, size_t count);
 
 int framing_handshake_construct(unsigned char *out_handshake, size_t len);
+
+int framing_message_construct(unsigned char *payload, size_t payload_len, unsigned char *out_frame, size_t out_frame_len);
 #endif /* MESHTASTIC_FRAMING_H */
