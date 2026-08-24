@@ -26,13 +26,13 @@
  * platform_freebsd.c -- implémentation FreeBSD (termios, /dev/cuaU*, ucom) de platform.h.
  */
 #include "platform.h"
-
 #include <fcntl.h>      /* open(), O_RDWR, O_NOCTTY */
 #include <termios.h>    /* struct termios, cfmakeraw, tcgetattr, tcsetattr, B115200 */
 #include <unistd.h>     /* close(), read(), write() */
 #include <stdio.h>      /* perror() */
 #include <dirent.h>
 #include <string.h>
+
 /*
  * Ouvre et configure le port série en mode "brut" (raw mode) :
  * aucune interprétation des octets par le noyau (pas de traduction
@@ -45,7 +45,6 @@ platform_serial_open(const char *device)
 {
 	int fd;
 	struct termios tty;
-	
 
 	/* Ouverture du device. O_NOCTTY évite que ce port devienne le
 	 * terminal de contrôle de notre process (comportement hérité de

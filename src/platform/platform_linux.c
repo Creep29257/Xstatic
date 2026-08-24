@@ -32,7 +32,7 @@
 #include <termios.h>    /* struct termios, cfmakeraw, tcgetattr, tcsetattr, B115200 */
 #include <unistd.h>     /* close(), read(), write() */
 #include <stdio.h>      /* perror() */
-
+#include <string.h>
 /*
  * Ouvre et configure le port série en mode "brut" (raw mode) :
  * aucune interprétation des octets par le noyau (pas de traduction
@@ -68,6 +68,7 @@ platform_serial_open(const char *device)
 	 * l'interprétation des caractères de contrôle, etc. Modifie tty
 	 * uniquement en mémoire, rien n'est encore appliqué au device. */
 	cfmakeraw(&tty);
+	tty.c_cflag &= ~HUPCL;
 
 	/* Fixe la vitesse de la liaison série à 115200 bauds, celle
 	 * qu'utilise le firmware Meshtastic. Toujours en mémoire pour
