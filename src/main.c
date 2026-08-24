@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 
 #define NAME_BUF_SIZE sizeof(((mesh_node_t *)0)->long_name)
