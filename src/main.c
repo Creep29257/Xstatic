@@ -34,6 +34,12 @@
 
 
 #define NAME_BUF_SIZE sizeof(((mesh_node_t *)0)->long_name)
+typedef enum {
+	READ_OPTION,
+	SEND_OPTION,
+	USAGE_OPTION
+} option_mode_t;
+option_mode_top tion;
 /*
  * main.c -- point d'entrée provisoire (structure finale à venir,
  * cf design.md : fusion select() avec ui_xlib). Ouvre le port série
@@ -296,9 +302,65 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t 
 	fs->frame_ready = 0;
 }
 
-int
-main(void)
+int to_radio_construct(char *to_str, char *message, meshtastic_ToRadio *out)
 {
+		size_t text_size;
+		text_size = sizeof(out->packet.decoded.payload.bytes);
+
+		out->which_payload_variant = meshtastic_ToRadio_packet_tag;
+		out->packet.to = strtoul(to_str, NULL,10);
+		out->packet.from = 0;
+		out->packet.channel = 0;
+		out->packet.which_payload_variant = meshtastic_MeshPacket_decoded_tag;
+		out->packet.decoded.portnum = meshtastic_PortNum_TEXT_MESSAGE_APP;
+
+		if(strlen( message) <= (text_size ))
+		{
+				
+			memcpy(out->packet.decoded.payload.bytes,message, strlen(message));
+			out->packet.decoded.payload.size = strlen(message);
+				
+		}
+		else 
+		{
+				
+			fprintf(stderr, "to_radio_construct : message is too long\n");
+			return -1;
+		}
+		return 0;
+}
+
+int to_radio_encode(meshtastic_ToRadio *to_radio, uint8_t *out_buffer, size_t *out_len)
+{
+    pb_ostream_t stream = pb_ostream_from_buffer(out_buffer, FRAMING_MAX_PAYLOAD);
+    
+    if (pb_encode(&stream, meshtastic_ToRadio_fields, to_radio) == false)
+    {
+        fprintf(stderr, "to_radio_encode : cant encode msg\n");
+		return -1;
+    }
+    
+    *out_len = stream.bytes_written;
+    
+    return 0;
+}
+
+int
+main(int argc, char *argv[])
+{
+	if (argc<2 || strcmp(argv[1], "-v")== 0)
+	{
+		option = READ_OPTION;
+	}
+	else if (strcmp(argv[1], "-s")== 0)
+	{
+		option = SEND_OPTION;
+	}
+	else 
+	{
+		option = USAGE_OPTION;
+	}
+
 	signal(SIGINT, handle_sigint);
 	int		fd;
 	unsigned char	buf[64];
@@ -355,7 +417,9 @@ main(void)
  	* est utilisé directement pour ne pas perdre le début du flux entre
  	* validation et lecture normale.
  	*/
-
+	
+		
+	
 	while (fs.frame_ready == 0 && attemps < 30) {
 		n = platform_serial_read(fd, buf, sizeof(buf));
 		if (n > 0) {
@@ -376,18 +440,47 @@ main(void)
 	 * des trames Meshtastic (une trame peut être coupée entre deux
 	 * lectures, ou plusieurs trames peuvent arriver d'un coup).
 	 */
-	while (running) {
-		n = platform_serial_read(fd, buf, sizeof(buf));
-		if (n > 0) {
-			framing_feed(&fs, buf, n);
-			if (fs.frame_ready) {
-				process_frame(&fs, &msg, state);
+	switch (option)
+	{
+		case READ_OPTION :
+		while (running) {
+			n = platform_serial_read(fd, buf, sizeof(buf));
+			if (n > 0) {
+				framing_feed(&fs, buf, n);
+				if (fs.frame_ready) {
+					process_frame(&fs, &msg, state);
+				}
+			} else if (n == -1) {
+				perror("read");
+				break;
 			}
-		} else if (n == -1) {
-			perror("read");
+		}
+		mesh_state_destroy(state);
+		break;
+
+		case SEND_OPTION:
+		{
+			meshtastic_ToRadio to_radio = {0};
+			if (to_radio_construct(argv[2], argv[3], &to_radio) == -1)
+				{
+					return -1;
+				}
+			uint8_t encoded_buffer[FRAMING_MAX_PAYLOAD];
+			size_t encoded_len;
+				if (to_radio_encode(&to_radio, encoded_buffer, &encoded_len) == -1)
+				{
+					return -1;
+				}
+		
 			break;
 		}
+
+		case USAGE_OPTION:
+		printf("usage: -v view data stream, -s send a message -s nodenum or long name message");
+			break;
+		default :
+		break;
 	}
-	mesh_state_destroy(state);
-	return 0;
+
+		return 0;
 }
