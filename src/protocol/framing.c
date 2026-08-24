@@ -123,3 +123,18 @@ int framing_handshake_construct(unsigned char *out_handshake, size_t len)
     out_handshake[5] = arc4random_uniform(127) + 1;
     return 0;
 }
+
+int framing_message_construct(unsigned char *payload, size_t payload_len, unsigned char *out_frame, size_t out_frame_len)
+{
+     if (payload == NULL || out_frame_len < payload_len + 4)
+    {
+        fprintf(stderr, "message_construct: invalid argument\n");
+        return -1;
+    }
+    out_frame[0] = 0x94;
+    out_frame[1] = 0xc3;
+    out_frame[2] = (payload_len >> 8) & 0xFF;
+    out_frame[3] = payload_len & 0xFF;
+    memcpy(out_frame + 4, payload, payload_len);
+    return 0;
+}
