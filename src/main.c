@@ -27,6 +27,7 @@
 #include "protocol/framing.h"
 #include "core/mesh_state.h"
 #include "protocol/generated/meshtastic/mesh.pb.h"
+#include "third_party/nanopb/pb_encode.h"
 #include "third_party/nanopb/pb_decode.h"
 #include <stdio.h>
 #include <signal.h>
