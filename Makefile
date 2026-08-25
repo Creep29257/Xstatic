@@ -1,4 +1,4 @@
-TARGET = test
+TARGET = Xstatic
 
 SRCS = src/main.c \
        src/platform/platform_freebsd.c \
