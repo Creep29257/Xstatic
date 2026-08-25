@@ -39,6 +39,7 @@ typedef enum
 {
 	READ_OPTION,
 		SEND_OPTION,
+		LIST-OPTION
 		USAGE_OPTION
 } option_mode_t;
 option_mode_t	option;
@@ -373,7 +374,13 @@ main(int argc, char *argv[])
 	} else if (strcmp(argv[1], "-s") == 0)
 	{
 		option = SEND_OPTION;
-	} else
+	} 
+	if (strcmp(argv[1], "-l") == 0)
+	{
+		option = LIST_OPTION;
+	}
+	
+	else
 	{
 		option = USAGE_OPTION;
 	}
@@ -524,6 +531,20 @@ main(int argc, char *argv[])
 		platform_serial_close(fd);
 		fd = platform_serial_open(serial_path);
 		platform_serial_close(fd);
+		break;
+	}
+	case LIST_OPTION:
+	{
+		mesh_node_t *node_cursor;
+		int pos_node=1;
+		node_cursor = mesh_state_first_node(state);
+		while(node_cursor != NULL)
+		{
+			
+			printf("\033[32mNode %i    num =%u , node long_name = %s , node hw_model= %u \n\033[0m", pos_node, node_cursor->num, node_cursor->long_name, node_cursor->hw_model);
+			pos_node++;
+			node_cursor = mesh_state_next_node(node_cursor);
+		}
 		break;
 	}
 

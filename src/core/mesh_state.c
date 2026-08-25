@@ -149,3 +149,20 @@ bool mesh_state_add_or_update_node(mesh_state_t *state, mesh_node_info_t *node_i
 
 }
 
+mesh_node_t *mesh_state_first_node(mesh_state_t *state)
+{
+   
+    mesh_node_t *first_node;
+    first_node = state->head;
+     if ( first_node == NULL)
+    {
+        return NULL;
+    }
+    
+    return first_node;
+}
+
+mesh_node_t *mesh_state_next_node(mesh_node_t *node)
+{
+  return node->next;
+}
