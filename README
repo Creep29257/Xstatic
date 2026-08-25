@@ -19,16 +19,19 @@ Architecture (voir doc/design) :
   - Gestion propre de l'arrêt (Ctrl+C / SIGINT) : fait.
   - Interface Xlib : pas commencé.
   - Détection automatique du device série FreeBSd et Linux (primitif, testé sous BSD pas sous Linux)
-  - Envoi de messages (case -s) : construction ToRadio (to_radio_construct),
-    encodage protobuf (to_radio_encode), emballage framing variable
-    (framing_message_construct) et écriture port série : fait, compile,
-    pas encore testé sur device réel. Résolution du destinataire par num
-    uniquement pour l'instant (pas par nom).
+  - Envoi de messages (case -s) : fait, testé et fiabilisé sur device réel
+    (RAK4631 + Wio Tracker L1). Nécessite une réouverture du port série
+    juste après l'écriture pour déclencher la transmission côté firmware
+    (comportement du firmware, pas un bug du client). Résolution du
+    destinataire par num uniquement pour l'instant.
+
+
 
 À faire :
-  - port Meshtastic automatiquement, au lieu de le préciser à la main.
-  - ui/ui_xlib.c : fenêtre Xlib, boucle XNextEvent.
-  - Fusion select() entre le fd série et la connexion Xlib.
+  
+  - Mode liste des nodes connus (-l ou similaire).
+  - Revoir la verbosité de l'affichage en lecture (actuellement tout est
+    affiché, y compris les tags peu utiles au quotidien).
 
 Compilation :
   make        -- compile le binaire "test"
