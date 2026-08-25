@@ -426,12 +426,13 @@ main(int argc, char *argv[])
 		
 	
 
-while (config_complete == 0 && attemps < 30) {
+while (config_complete == 0 && attemps < 300) {
     n = platform_serial_read(fd, buf, sizeof(buf));
     if (n > 0) {
         framing_feed(&fs, buf, n);
         if (fs.frame_ready) {
             process_frame(&fs, &msg, state);
+	    attemps=0;
             if (msg.which_payload_variant == meshtastic_FromRadio_config_complete_id_tag) {
                 config_complete = 1;
             }
@@ -490,6 +491,22 @@ printf("device valide\n");
 				}
 			platform_serial_write(fd, final_frame, encoded_len + 4);
 			printf("msg envoyé a: %s contenu %s\n", argv[2], argv[3] );
+			int delay_after_send =0;
+			while(delay_after_send<50)
+			{
+			 n = platform_serial_read(fd, buf, sizeof(buf));
+                        if (n > 0) {
+                                framing_feed(&fs, buf, n);
+                                if (fs.frame_ready) {
+                                        process_frame(&fs, &msg, state);
+                                }
+                        } else if (n == -1) {
+                                perror("read");
+                                break;
+                        }
+			delay_after_send++;
+			}
+
 			platform_serial_close(fd);
 			break;
 		}
