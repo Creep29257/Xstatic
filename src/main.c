@@ -21,10 +21,11 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * main.c -- point d'entrée v0.1 : lecture (-v), envoi (-s), liste des nodes
- * connus (-l). Structure définitive à venir (fusion select() avec ui_xlib,
- * cf design.md) -- ce fichier reste volontairement simple pour cette
- * version : un seul mode actif par exécution, pas d'interactivité.
+ * main.c -- point d'entrée v0.1 : lecture (-v essentiel / -vv complet),
+ * envoi (-s), liste des nodes connus (-l). Structure définitive à venir
+ * (fusion select() avec ui_xlib, cf design.md) -- ce fichier reste
+ * volontairement simple pour cette version : un seul mode actif par
+ * exécution, pas d'interactivité.
  */
 #include "platform/platform.h"
 #include "protocol/framing.h"
@@ -52,6 +53,12 @@ typedef enum
 } option_mode_t;
 
 option_mode_t option;
+
+/* verbose_level distingue -v (0 : essentiel, nodes + messages) de -vv
+ * (1 : tout, y compris config/moduleConfig/channel/etc.). N'a d'effet
+ * que pour READ_OPTION -- SEND_OPTION et LIST_OPTION restent toujours
+ * silencieux pendant la phase de validation, peu importe ce niveau. */
+int verbose_level;
 
 /* running passe à 0 sur SIGINT (Ctrl+C), lu par la boucle de READ_OPTION
  * pour sortir proprement (fermeture du port, destruction de mesh_state)
@@ -104,20 +111,230 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t 
 
 /*
  * display_frame -- affiche le contenu d'une trame déjà décodée par
- * process_frame(). N'affiche que l'essentiel pour la v0.1 : nouveau node
- * connu, et messages texte reçus (from/to/contenu). verbose contrôle
- * uniquement l'affichage des tags "autres" (moins utiles au quotidien) --
- * il n'a plus d'effet sur le traitement, qui se fait toujours dans
- * process_frame().
+ * process_frame(). Deux niveaux : node_info_tag et packet_tag (nodes
+ * connus, messages texte) s'affichent dès verbose>=0 -- c'est
+ * l'essentiel, ce que montre -v. Tous les autres tags ne s'affichent
+ * qu'en verbose==1, c'est-à-dire -vv.
  */
 static void
 display_frame(meshtastic_FromRadio *msg, mesh_state_t *state, int verbose)
 {
 	switch (msg->which_payload_variant)
 	{
+	case meshtastic_FromRadio_my_info_tag:
+		if (verbose == 1)
+		{
+			printf("MyNodeInfo recu, mon node = %u\n", msg->my_info.my_node_num);
+		}
+		break;
+
 	case meshtastic_FromRadio_node_info_tag:
 		printf("\033[32mNode bien créé / mis a jour, node num =%u , node long_name = %s , node hw_model= %u \n\033[0m",
 		       msg->node_info.num, msg->node_info.user.long_name, msg->node_info.user.hw_model);
+		break;
+
+	case meshtastic_FromRadio_config_complete_id_tag:
+		if (verbose == 1)
+		{
+			printf("ConfigComplete id recu %u\n", msg->config_complete_id);
+		}
+		break;
+
+	case meshtastic_FromRadio_rebooted_tag:
+		if (verbose == 1 && msg->rebooted)
+		{
+			printf("device vient d'etre rebooter \n");
+		}
+		break;
+
+	case meshtastic_FromRadio_queueStatus_tag:
+		if (verbose == 1)
+		{
+			printf("QueueStatus recu : res=%d free=%u maxlen=%u mesh_packet_id=%u\n",
+			       msg->queueStatus.res, msg->queueStatus.free, msg->queueStatus.maxlen, msg->queueStatus.mesh_packet_id);
+		}
+		break;
+
+	case meshtastic_FromRadio_fileInfo_tag:
+		if (verbose == 1)
+		{
+			printf("nom du fichier: %s, taille %u \n", msg->fileInfo.file_name, msg->fileInfo.size_bytes);
+		}
+		break;
+
+	case meshtastic_FromRadio_xmodemPacket_tag:
+		if (verbose == 1)
+		{
+			printf("control: %d, seq: %u, crc16: %u \n", msg->xmodemPacket.control, msg->xmodemPacket.seq, msg->xmodemPacket.crc16);
+		}
+		break;
+
+	case meshtastic_FromRadio_log_record_tag:
+		if (verbose == 1)
+		{
+			printf("message: %s, time: %u, source: %s, level %d \n", msg->log_record.message, msg->log_record.time, msg->log_record.source, msg->log_record.level);
+		}
+		break;
+
+	case meshtastic_FromRadio_channel_tag:
+		if (verbose == 1)
+		{
+			printf("Channel recu : index=%d has_settings=%d role=%d\n", msg->channel.index, msg->channel.has_settings, msg->channel.role);
+		}
+		break;
+
+	case meshtastic_FromRadio_lockdown_status_tag:
+		if (verbose == 1)
+		{
+			printf("LockdownStatus recu : state=%d lock_reason=%s\n", msg->lockdown_status.state, msg->lockdown_status.lock_reason);
+		}
+		break;
+
+	case meshtastic_FromRadio_deviceuiConfig_tag:
+		if (verbose == 1)
+		{
+			printf("DeviceUIConfig recu : version=%u brightness=%u timeout=%u theme=%d\n", msg->deviceuiConfig.version, msg->deviceuiConfig.screen_brightness, msg->deviceuiConfig.screen_timeout, msg->deviceuiConfig.theme);
+		}
+		break;
+
+	case meshtastic_FromRadio_metadata_tag:
+		if (verbose == 1)
+		{
+			printf("DeviceMetadata recu : firmware=%s hw_model=%d wifi=%d bluetooth=%d ethernet=%d\n", msg->metadata.firmware_version, msg->metadata.hw_model, msg->metadata.hasWifi, msg->metadata.hasBluetooth, msg->metadata.hasEthernet);
+		}
+		break;
+
+	case meshtastic_FromRadio_region_presets_tag:
+		if (verbose == 1)
+		{
+			printf("LoRaRegionPresetMap recu : groups_count=%u region_groups_count=%u\n", msg->region_presets.groups_count, msg->region_presets.region_groups_count);
+		}
+		break;
+
+	case meshtastic_FromRadio_mqttClientProxyMessage_tag:
+		if (verbose == 1)
+		{
+			if (msg->mqttClientProxyMessage.which_payload_variant == meshtastic_MqttClientProxyMessage_text_tag)
+			{
+				printf("MqttClientProxyMessage (text) : topic=%s text=%s\n",
+				       msg->mqttClientProxyMessage.topic, msg->mqttClientProxyMessage.payload_variant.text);
+			} else
+			{
+				printf("payload variant binaire\n");
+			}
+		}
+		break;
+
+	case meshtastic_FromRadio_clientNotification_tag:
+		if (verbose == 1)
+		{
+			printf("client notification tag message: %s\n", msg->clientNotification.message);
+		}
+		break;
+
+	case meshtastic_FromRadio_config_tag:
+		if (verbose == 1)
+		{
+			switch (msg->config.which_payload_variant)
+			{
+			case meshtastic_Config_device_tag:
+				printf("Config recu : sous-type=device\n");
+				break;
+			case meshtastic_Config_position_tag:
+				printf("Config recu : sous-type=position\n");
+				break;
+			case meshtastic_Config_power_tag:
+				printf("Config recu : sous-type=power\n");
+				break;
+			case meshtastic_Config_network_tag:
+				printf("Config recu : sous-type=network\n");
+				break;
+			case meshtastic_Config_display_tag:
+				printf("Config recu : sous-type=display\n");
+				break;
+			case meshtastic_Config_lora_tag:
+				printf("Config recu : sous-type=lora\n");
+				break;
+			case meshtastic_Config_bluetooth_tag:
+				printf("Config recu : sous-type=bluetooth\n");
+				break;
+			case meshtastic_Config_security_tag:
+				printf("Config recu : sous-type=security\n");
+				break;
+			case meshtastic_Config_sessionkey_tag:
+				printf("Config recu : sous-type=sessionkey\n");
+				break;
+			case meshtastic_Config_device_ui_tag:
+				printf("Config recu : sous-type=device_ui\n");
+				break;
+			default:
+				printf("Config recu : sous-type inconnu, tag=%d\n", msg->config.which_payload_variant);
+				break;
+			}
+		}
+		break;
+
+	case meshtastic_FromRadio_moduleConfig_tag:
+		if (verbose == 1)
+		{
+			switch (msg->moduleConfig.which_payload_variant)
+			{
+			case meshtastic_ModuleConfig_mqtt_tag:
+				printf("ModuleConfig recu : sous-type=mqtt\n");
+				break;
+			case meshtastic_ModuleConfig_serial_tag:
+				printf("ModuleConfig recu : sous-type=serial\n");
+				break;
+			case meshtastic_ModuleConfig_external_notification_tag:
+				printf("ModuleConfig recu : sous-type=external_notification\n");
+				break;
+			case meshtastic_ModuleConfig_store_forward_tag:
+				printf("ModuleConfig recu : sous-type=store_forward\n");
+				break;
+			case meshtastic_ModuleConfig_range_test_tag:
+				printf("ModuleConfig recu : sous-type=range_test\n");
+				break;
+			case meshtastic_ModuleConfig_telemetry_tag:
+				printf("ModuleConfig recu : sous-type=telemetry\n");
+				break;
+			case meshtastic_ModuleConfig_canned_message_tag:
+				printf("ModuleConfig recu : sous-type=canned_message\n");
+				break;
+			case meshtastic_ModuleConfig_audio_tag:
+				printf("ModuleConfig recu : sous-type=audio\n");
+				break;
+			case meshtastic_ModuleConfig_remote_hardware_tag:
+				printf("ModuleConfig recu : sous-type=remote_hardware\n");
+				break;
+			case meshtastic_ModuleConfig_neighbor_info_tag:
+				printf("ModuleConfig recu : sous-type=neighbor_info\n");
+				break;
+			case meshtastic_ModuleConfig_ambient_lighting_tag:
+				printf("ModuleConfig recu : sous-type=ambient_lighting\n");
+				break;
+			case meshtastic_ModuleConfig_detection_sensor_tag:
+				printf("ModuleConfig recu : sous-type=detection_sensor\n");
+				break;
+			case meshtastic_ModuleConfig_paxcounter_tag:
+				printf("ModuleConfig recu : sous-type=paxcounter\n");
+				break;
+			case meshtastic_ModuleConfig_statusmessage_tag:
+				printf("ModuleConfig recu : sous-type=statusmessage\n");
+				break;
+			case meshtastic_ModuleConfig_traffic_management_tag:
+				printf("ModuleConfig recu : sous-type=traffic_management\n");
+				break;
+			case meshtastic_ModuleConfig_tak_tag:
+				printf("ModuleConfig recu : sous-type=tak\n");
+				break;
+			case meshtastic_ModuleConfig_mesh_beacon_tag:
+				printf("ModuleConfig recu : sous-type=mesh_beacon\n");
+				break;
+			default:
+				printf("ModuleConfig recu : sous-type inconnu, tag=%d\n", msg->moduleConfig.which_payload_variant);
+				break;
+			}
+		}
 		break;
 
 	case meshtastic_FromRadio_packet_tag:
@@ -149,6 +366,11 @@ display_frame(meshtastic_FromRadio *msg, mesh_state_t *state, int verbose)
 				}
 			}
 
+			if (verbose == 1)
+			{
+				printf("channel: %u id: %u\n", msg->packet.channel, msg->packet.id);
+			}
+
 			if (msg->packet.which_payload_variant == meshtastic_MeshPacket_decoded_tag)
 			{
 				/* Data.payload est un PB_BYTES_ARRAY_T (size + bytes[233]),
@@ -167,7 +389,7 @@ display_frame(meshtastic_FromRadio *msg, mesh_state_t *state, int verbose)
 						printf("===============================================================\033[0m \n");
 					}
 				}
-			} else
+			} else if (verbose == 1)
 			{
 				printf("message chiffré from: %s to: %s\n", buffer_from, buffer_to);
 			}
@@ -241,15 +463,29 @@ main(int argc, char *argv[])
 	if (argc < 2 || strcmp(argv[1], "-v") == 0)
 	{
 		option = READ_OPTION;
+		verbose_level = 0;
+	} else if (strcmp(argv[1], "-vv") == 0)
+	{
+		option = READ_OPTION;
+		verbose_level = 1;
 	} else if (strcmp(argv[1], "-s") == 0)
 	{
 		option = SEND_OPTION;
+		verbose_level = 0;
 	} else if (strcmp(argv[1], "-l") == 0)
 	{
 		option = LIST_OPTION;
+		verbose_level = 0;
 	} else
 	{
 		option = USAGE_OPTION;
+		verbose_level = 0;
+	}
+
+	if (option == USAGE_OPTION)
+	{
+		printf("usage: -v view essential, -vv view all, -s <nodenum> <message> send a message, -l list known nodes\n");
+		return 0;
 	}
 
 	signal(SIGINT, handle_sigint);
@@ -307,7 +543,8 @@ main(int argc, char *argv[])
 	 * que mesh_state soit peuplé avant SEND_OPTION/LIST_OPTION. attemps
 	 * est réinitialisé à chaque trame reçue plutôt que d'être un compteur
 	 * global, pour ne pas timeout prématurément sur un gros dump tout en
-	 * détectant un vrai silence du device.
+	 * détectant un vrai silence du device. Silencieuse sauf en READ_OPTION
+	 * (display_frame reçoit 0 pour SEND_OPTION/LIST_OPTION).
 	 */
 	while (config_complete == 0 && attemps < 300)
 	{
@@ -318,7 +555,7 @@ main(int argc, char *argv[])
 			if (fs.frame_ready)
 			{
 				process_frame(&fs, &msg, state);
-				display_frame(&msg, state, option == READ_OPTION);
+				display_frame(&msg, state, option == READ_OPTION ? verbose_level : 0);
 				attemps = 0;
 				if (msg.which_payload_variant == meshtastic_FromRadio_config_complete_id_tag)
 				{
@@ -353,7 +590,7 @@ main(int argc, char *argv[])
 				if (fs.frame_ready)
 				{
 					process_frame(&fs, &msg, state);
-					display_frame(&msg, state, 1);
+					display_frame(&msg, state, verbose_level);
 				}
 			} else if (n == -1)
 			{
@@ -425,7 +662,7 @@ main(int argc, char *argv[])
 		}
 
 	case USAGE_OPTION:
-		printf("usage: -v view data stream, -s <nodenum> <message> send a message, -l list known nodes\n");
+		printf("usage: -v view essential, -vv view all, -s <nodenum> <message> send a message, -l list known nodes\n");
 		break;
 
 	default:
