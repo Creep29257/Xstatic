@@ -1,4 +1,4 @@
-Xstatic
+Xstatic V0.1
 ==============
 Client lourd Meshtastic en C, interface X11 (Xlib), portable FreeBSD/Linux.
 
@@ -33,14 +33,10 @@ Architecture (voir doc/design) :
 
 
 
-À faire :
-  
-  - Mode liste des nodes connus (-l ou similaire).
-  - Revoir la verbosité de l'affichage en lecture (actuellement tout est
-    affiché, y compris les tags peu utiles au quotidien).
+
 
 Compilation :
-  make        -- compile le binaire "test"
+  make        -- compile le binaire "Xstatic"
   make clean  -- supprime le binaire compilé
 
 
@@ -54,7 +50,7 @@ Note sur l'usage de l'IA :
 
 v0.1 cible (ordre révisé) : lire le port série, décoder les NodeInfo reçus,
 envoyer un message texte en ligne de commande. L'affichage dans une fenêtre
-Xlib est différé à une version ultérieure — priorité à un client CLI
+Xlib est différé à une version ultérieure, priorité à un client CLI
 fonctionnel en lecture et en écriture avant l'interface graphique.
 
 Licence : BSD 2-clause, voir LICENSE.
