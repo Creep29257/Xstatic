@@ -2,6 +2,12 @@ Xstatic
 ==============
 Client lourd Meshtastic en C, interface X11 (Xlib), portable FreeBSD/Linux.
 
+usage:
+- -v view node traffic essential
+- -vv view all 
+- -s <nodenum> <message> send a message 
+- -l list known nodes
+
 Architecture (voir doc/design) :
   src/platform/  -- accès série, dépendant de l'OS (FreeBSD prioritaire, Linux en second)
   src/protocol/  -- framing + décodage protobuf Meshtastic (nanopb intégré)
