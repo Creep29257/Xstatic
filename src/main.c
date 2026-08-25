@@ -380,7 +380,7 @@ main(int argc, char *argv[])
 	{
 		option = SEND_OPTION;
 	} 
-	if (strcmp(argv[1], "-l") == 0)
+	else if (strcmp(argv[1], "-l") == 0)
 	{
 		option = LIST_OPTION;
 	}
