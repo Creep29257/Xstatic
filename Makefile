@@ -1,7 +1,6 @@
 TARGET = Xstatic
 
 SRCS = src/main.c \
-       src/platform/platform_freebsd.c \
        src/protocol/framing.c \
        src/core/mesh_state.c \
        src/protocol/generated/meshtastic/mesh.pb.c \
@@ -19,10 +18,15 @@ SRCS = src/main.c \
 INCLUDES = -Isrc/platform -Isrc/protocol -Isrc/protocol/generated \
            -Isrc/core -Ithird_party/nanopb -I.
 
-$(TARGET): $(SRCS)
-	cc -o $(TARGET) $(SRCS) $(INCLUDES)
+all:
+	@case "`uname -s`" in \
+		FreeBSD) PLATFORM_SRC=src/platform/platform_freebsd.c ;; \
+		Linux)   PLATFORM_SRC=src/platform/platform_linux.c ;; \
+		*) echo "OS non supporte: `uname -s`" >&2; exit 1 ;; \
+	esac; \
+	cc -o $(TARGET) $(SRCS) $$PLATFORM_SRC $(INCLUDES)
 
 clean:
 	rm -f $(TARGET)
 
-.PHONY: clean
+.PHONY: all clean
