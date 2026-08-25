@@ -129,8 +129,11 @@ display_frame(meshtastic_FromRadio *msg, mesh_state_t *state, int verbose)
 		break;
 
 	case meshtastic_FromRadio_node_info_tag:
+		if(verbose == 1)
+		{
 		printf("\033[32mNode bien créé / mis a jour, node num =%u , node long_name = %s , node hw_model= %u \n\033[0m",
 		       msg->node_info.num, msg->node_info.user.long_name, msg->node_info.user.hw_model);
+		}
 		break;
 
 	case meshtastic_FromRadio_config_complete_id_tag:
