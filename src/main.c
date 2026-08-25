@@ -101,8 +101,7 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio * msg, mesh_state_t
 					fprintf(stderr, "mesh_state_add_or_update_node failed\n");
 				} else
 				{
-					printf("Node bien créé / mis a jour, node num =%u , node long_name = %s , node hw_model= %u \n",
-					       info.num, info.long_name, info.hw_model);
+					printf("\033[32mNode bien créé / mis a jour, node num =%u , node long_name = %s , node hw_model= %u \n\033[0m",info.num, info.long_name, info.hw_model);
 				}
 			}
 			break;
@@ -297,7 +296,9 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio * msg, mesh_state_t
 							char		text[text_size];
 							memcpy(text, msg->packet.decoded.payload.bytes, msg->packet.decoded.payload.size);
 							text[msg->packet.decoded.payload.size] = '\0';
+							printf("\033[32m===============================================================\n");
 							printf("from: %s to: %s msg: %s\n", buffer_from, buffer_to, text);
+							printf("===============================================================\033[0m \n");
 						}
 					}
 				} else
@@ -517,9 +518,9 @@ main(int argc, char *argv[])
 			return -1;
 		}
 		platform_serial_write(fd, final_frame, encoded_len + 4);
-		Printf("======================================================================");
-		printf(" \033[32m msg envoyé a: %s contenu %s\n \033[0m", argv[2], argv[3]);
-		Printf("======================================================================");
+		printf("\033[32m======================================================================\n");
+		printf("msg envoyé a: %s contenu %s\n", argv[2], argv[3]);
+		printf("======================================================================\n \033[0m");
 		platform_serial_close(fd);
 		fd = platform_serial_open(serial_path);
 		platform_serial_close(fd);
