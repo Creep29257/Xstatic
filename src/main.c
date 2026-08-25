@@ -39,7 +39,7 @@ typedef enum
 {
 	READ_OPTION,
 		SEND_OPTION,
-		LIST-OPTION,
+		LIST_OPTION,
 		USAGE_OPTION
 } option_mode_t;
 option_mode_t	option;
@@ -72,12 +72,16 @@ handle_sigint(int sig)
  * boucle de lecture normale. Remet fs->frame_ready à 0 une fois traité.
  */
 static void
-process_frame(struct framing_state *fs, meshtastic_FromRadio * msg, mesh_state_t * state)
-{
+process_frame(struct framing_state *fs, meshtastic_FromRadio * msg, mesh_state_t * state, int verbose)
+{	if(verbose == 1)
+	{
 	printf("frame_ready=1, payload_pos=%u\n", fs->payload_pos);
+	}
 	pb_istream_t	stream = pb_istream_from_buffer(fs->payload, fs->payload_pos);
 	if (pb_decode(&stream, meshtastic_FromRadio_fields, msg))
 	{
+		if(verbose ==1 )
+		{
 		switch (msg->which_payload_variant)
 		{
 		case meshtastic_FromRadio_my_info_tag:
@@ -311,6 +315,7 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio * msg, mesh_state_t
 		default:
 			printf("autre message, tag=%d\n", msg->which_payload_variant);
 			break;
+		}
 		}
 	} else
 	{
