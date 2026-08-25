@@ -376,6 +376,7 @@ main(int argc, char *argv[])
 	unsigned char handshake[HANDSHAKE_LEN];
 	int attemps = 0;
 	unsigned char wake[32];
+	int config_complete =0;
 
 	if (state == NULL) {
 		fprintf(stderr, "mesh_init failed\n");
@@ -424,21 +425,26 @@ main(int argc, char *argv[])
 	
 		
 	
-	while (fs.frame_ready == 0 && attemps < 30) {
-		n = platform_serial_read(fd, buf, sizeof(buf));
-		if (n > 0) {
-			framing_feed(&fs, buf, n);
-		}
-		attemps++;
-	}
-	if (fs.frame_ready) {
-		printf("device valide\n");
-		process_frame(&fs, &msg, state);
-	} else {
-		printf("pas de reponse valide\n");
-		return -1
-	}
 
+while (config_complete == 0 && attemps < 30) {
+    n = platform_serial_read(fd, buf, sizeof(buf));
+    if (n > 0) {
+        framing_feed(&fs, buf, n);
+        if (fs.frame_ready) {
+            process_frame(&fs, &msg, state);
+            if (msg.which_payload_variant == meshtastic_FromRadio_config_complete_id_tag) {
+                config_complete = 1;
+            }
+        }
+    }
+    attemps++;
+}
+
+if (config_complete == 0) {
+    printf("pas de reponse valide\n");
+    return -1;
+}
+printf("device valide\n");
 	/*
 	 * Boucle de lecture infinie : chaque appel à read() peut renvoyer
 	 * un nombre arbitraire d'octets, sans rapport avec les frontières
