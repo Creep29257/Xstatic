@@ -465,7 +465,7 @@ main(int argc, char *argv[])
 			framing_feed(&fs, buf, n);
 			if (fs.frame_ready)
 			{
-				process_frame(&fs, &msg, state);
+				process_frame(&fs, &msg, state, option == READ_OPTION);
 				attemps = 0;
 				if (msg.which_payload_variant == meshtastic_FromRadio_config_complete_id_tag)
 				{
@@ -499,7 +499,7 @@ main(int argc, char *argv[])
 				framing_feed(&fs, buf, n);
 				if (fs.frame_ready)
 				{
-					process_frame(&fs, &msg, state);
+					process_frame(&fs, &msg, state, option == READ_OPTION);
 				}
 			} else if (n == -1)
 			{
