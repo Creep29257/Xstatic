@@ -39,7 +39,7 @@ typedef enum
 {
 	READ_OPTION,
 		SEND_OPTION,
-		LIST-OPTION
+		LIST-OPTION,
 		USAGE_OPTION
 } option_mode_t;
 option_mode_t	option;
