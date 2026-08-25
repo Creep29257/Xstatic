@@ -70,6 +70,7 @@ mesh_state_t *mesh_state_init(void);
 void mesh_state_destroy(mesh_state_t *state);
 bool mesh_state_add_or_update_node(mesh_state_t *state, mesh_node_info_t *node_info);
 mesh_node_t *mesh_state_find_node(mesh_state_t *state, uint32_t num);
-
+mesh_node_t *mesh_state_first_node(mesh_state_t *state);
+mesh_node_t *mesh_state_next_node(mesh_node_t *node);
 
 #endif /* MESHTASTIC_MESH_STATE_H */
