@@ -436,6 +436,7 @@ main(int argc, char *argv[])
 		process_frame(&fs, &msg, state);
 	} else {
 		printf("pas de reponse valide\n");
+		return -1
 	}
 
 	/*
@@ -460,6 +461,7 @@ main(int argc, char *argv[])
 			}
 		}
 		mesh_state_destroy(state);
+		platform_serial_close(fd);
 		break;
 
 		case SEND_OPTION:
@@ -481,7 +483,8 @@ main(int argc, char *argv[])
     				return -1;
 				}
 			platform_serial_write(fd, final_frame, encoded_len + 4);
-		printf("msg envoyé\n");
+			printf("msg envoyé a: %s contenu %s\n", argv[2], argv[3] );
+			platform_serial_close(fd);
 			break;
 		}
 
