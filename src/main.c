@@ -499,49 +499,32 @@ main(int argc, char *argv[])
 		break;
 
 	case SEND_OPTION:
+	{
+		meshtastic_ToRadio to_radio = {0};
+		if (to_radio_construct(argv[2], argv[3], &to_radio) == -1)
 		{
-			meshtastic_ToRadio to_radio = {0};
-			if (to_radio_construct(argv[2], argv[3], &to_radio) == -1)
-			{
-				return -1;
-			}
-			uint8_t		encoded_buffer[FRAMING_MAX_PAYLOAD];
-			size_t		encoded_len;
-			if (to_radio_encode(&to_radio, encoded_buffer, &encoded_len) == -1)
-			{
-				return -1;
-			}
-			unsigned char	final_frame[FRAMING_MAX_PAYLOAD + 4];
-			if (framing_message_construct(encoded_buffer, encoded_len, final_frame, sizeof(final_frame)) == -1)
-			{
-				return -1;
-			}
-			platform_serial_write(fd, final_frame, encoded_len + 4);
-			printf("msg envoyé a: %s contenu %s\n", argv[2], argv[3]);
-			int		delay_after_send = 0;
-			while (delay_after_send < 50)
-			{
-				n = platform_serial_read(fd, buf, sizeof(buf));
-				if (n > 0)
-				{
-					framing_feed(&fs, buf, n);
-					if (fs.frame_ready)
-					{
-						process_frame(&fs, &msg, state);
-					}
-				} else if (n == -1)
-				{
-					perror("read");
-					break;
-				}
-				delay_after_send++;
-			}
-
-			platform_serial_close(fd);
-			fd = platform_serial_open(serial_path);
-			platform_serial_close(fd);
-			break;
+			return -1;
 		}
+		uint8_t encoded_buffer[FRAMING_MAX_PAYLOAD];
+		size_t encoded_len;
+		if (to_radio_encode(&to_radio, encoded_buffer, &encoded_len) == -1)
+		{
+			return -1;
+		}
+		unsigned char final_frame[FRAMING_MAX_PAYLOAD + 4];
+		if (framing_message_construct(encoded_buffer, encoded_len, final_frame, sizeof(final_frame)) == -1)
+		{
+			return -1;
+		}
+		platform_serial_write(fd, final_frame, encoded_len + 4);
+		Printf("======================================================================");
+		printf(" \033[32m msg envoyé a: %s contenu %s\n \033[0m", argv[2], argv[3]);
+		Printf("======================================================================");
+		platform_serial_close(fd);
+		fd = platform_serial_open(serial_path);
+		platform_serial_close(fd);
+		break;
+	}
 
 	case USAGE_OPTION:
 		printf("usage: -v view data stream, -s send a message -s nodenum or long name message");
