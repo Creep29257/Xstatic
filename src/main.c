@@ -315,6 +315,8 @@ int to_radio_construct(char *to_str, char *message, meshtastic_ToRadio *out)
 		out->packet.channel = 0;
 		out->packet.which_payload_variant = meshtastic_MeshPacket_decoded_tag;
 		out->packet.decoded.portnum = meshtastic_PortNum_TEXT_MESSAGE_APP;
+		out->packet.want_ack = true;
+		out->packet.priority = meshtastic_MeshPacket_Priority_RELIABLE;
 
 		if(strlen( message) <= (text_size ))
 		{
@@ -479,6 +481,7 @@ main(int argc, char *argv[])
     				return -1;
 				}
 			platform_serial_write(fd, final_frame, encoded_len + 4);
+		printf("msg envoyé\n");
 			break;
 		}
 
