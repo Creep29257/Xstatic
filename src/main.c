@@ -40,8 +40,7 @@
 #include <string.h>
 
 /* Taille du buffer utilisé pour résoudre from/to en long_name lisible.
- * Dérivée du champ long_name de mesh_node_t plutôt que codée en dur, pour
- * ne pas dépendre d'une taille magique dupliquée à deux endroits. */
+ * Dérivée du champ long_name de mesh_node_t  */
 #define NAME_BUF_SIZE sizeof(((mesh_node_t *)0)->long_name)
 
 typedef enum
@@ -56,7 +55,7 @@ option_mode_t option;
 
 /* verbose_level distingue -v (0 : essentiel, nodes + messages) de -vv
  * (1 : tout, y compris config/moduleConfig/channel/etc.). N'a d'effet
- * que pour READ_OPTION -- SEND_OPTION et LIST_OPTION restent toujours
+ * que pour READ_OPTION , SEND_OPTION et LIST_OPTION restent toujours
  * silencieux pendant la phase de validation, peu importe ce niveau. */
 int verbose_level;
 
@@ -73,12 +72,8 @@ handle_sigint(int sig)
 }
 
 /*
- * process_frame -- décode une trame FromRadio complète et met à jour
- * mesh_state en conséquence. Ne fait AUCUN affichage : c'est le rôle de
- * display_frame(), appelée séparément par l'appelant si besoin. Cette
- * séparation permet à LIST_OPTION et SEND_OPTION de peupler mesh_state
- * silencieusement pendant la phase de validation, sans dépendre d'un
- * mode "verbose" qui aurait aussi coupé le traitement.
+ * process_frame: décode une trame FromRadio complète et met à jour
+ * mesh_state en conséquence. 
  */
 static void
 process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t *state)
@@ -110,11 +105,11 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t 
 }
 
 /*
- * display_frame -- affiche le contenu d'une trame déjà décodée par
- * process_frame(). Deux niveaux : node_info_tag et packet_tag (nodes
- * connus, messages texte) s'affichent dès verbose>=0 -- c'est
- * l'essentiel, ce que montre -v. Tous les autres tags ne s'affichent
- * qu'en verbose==1, c'est-à-dire -vv.
+ * display_frame: affiche le contenu d'une trame déjà décodée par
+ * process_frame(). 
+ * Deux niveaux : node_info_tag et packet_tag (nodes
+ * connus, messages texte) s'affichent dès verbose>=0 
+ * Tous les autres tags ne s'affichent qu'en verbose==1, c'est-à-dire -vv.
  */
 static void
 display_frame(meshtastic_FromRadio *msg, mesh_state_t *state, int verbose)
@@ -377,8 +372,8 @@ display_frame(meshtastic_FromRadio *msg, mesh_state_t *state, int verbose)
 			if (msg->packet.which_payload_variant == meshtastic_MeshPacket_decoded_tag)
 			{
 				/* Data.payload est un PB_BYTES_ARRAY_T (size + bytes[233]),
-				 * PAS null-terminé -- copie défensive dans un buffer local
-				 * avec garde sur la taille avant d'ajouter le '\0' manuel. */
+				 * PAS null-terminé, copie  dans un buffer local
+				 * avec check sur la taille avant d'ajouter le '\0' manuel. */
 				size_t text_size = sizeof(msg->packet.decoded.payload.bytes) + 1;
 				if (msg->packet.decoded.portnum == meshtastic_PortNum_TEXT_MESSAGE_APP)
 				{
@@ -409,10 +404,10 @@ display_frame(meshtastic_FromRadio *msg, mesh_state_t *state, int verbose)
 }
 
 /*
- * to_radio_construct -- remplit un meshtastic_ToRadio pour l'envoi d'un
+ * to_radio_construct remplit un meshtastic_ToRadio pour l'envoi d'un
  * message texte. Paramètre de sortie par pointeur (out), retour int
  * (0 = succès, -1 = message trop long). to_str est converti en uint32_t
- * via strtoul (résolution par num uniquement -- pas par long_name, ce qui
+ * via strtoul (résolution par num uniquement  pas par long_name, ce qui
  * demanderait une lecture préalable du mesh non faite ici).
  */
 int
@@ -442,7 +437,7 @@ to_radio_construct(char *to_str, char *message, meshtastic_ToRadio *out)
 }
 
 /*
- * to_radio_encode -- encode un meshtastic_ToRadio en protobuf brut dans
+ * to_radio_encode: encode un meshtastic_ToRadio en protobuf brut dans
  * out_buffer. Taille réelle récupérée via stream.bytes_written (le
  * message ne remplit pas forcément tout FRAMING_MAX_PAYLOAD).
  */
@@ -542,9 +537,9 @@ main(int argc, char *argv[])
 
 	/*
 	 * Phase de validation : attend le dump complet du firmware jusqu'à
-	 * config_complete_id (pas juste la première trame) -- nécessaire pour
-	 * que mesh_state soit peuplé avant SEND_OPTION/LIST_OPTION. attemps
-	 * est réinitialisé à chaque trame reçue plutôt que d'être un compteur
+	 * config_complete_id (pas juste la première trame), nécessaire pour
+	 * que mesh_state soit peuplé avant SEND_OPTION/LIST_OPTION. 
+	 * attemps est réinitialisé à chaque trame reçue plutôt que d'être un compteur
 	 * global, pour ne pas timeout prématurément sur un gros dump tout en
 	 * détectant un vrai silence du device. Silencieuse sauf en READ_OPTION
 	 * (display_frame reçoit 0 pour SEND_OPTION/LIST_OPTION).
