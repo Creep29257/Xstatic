@@ -33,6 +33,7 @@
 #include <unistd.h>     /* close(), read(), write() */
 #include <stdio.h>      /* perror() */
 #include <string.h>
+#include <dirent.h>
 /*
  * Ouvre et configure le port série en mode "brut" (raw mode) :
  * aucune interprétation des octets par le noyau (pas de traduction
