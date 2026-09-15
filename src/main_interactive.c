@@ -172,9 +172,15 @@ if (FD_ISSET(STDIN_FILENO, &readfds))
 			int pos_node = 1;
 			while (node_cursor != NULL)
 			{
-				printf("\033[32mNode %i    num =%u , node long_name = %s , node hw_model= %u \n\033[0m",
+				printf("\033[32mNode %i    num =%u , node long_name = %s , node hw_model= %u \033[0m\n",
 				       pos_node, node_cursor->num, node_cursor->long_name, node_cursor->hw_model);
-				pos_node++;
+				if(node_cursor->position.valid == 1)
+				{
+					double lat = node_cursor->position.latitude_i / 10000000.0;
+					double lon = node_cursor->position.longitude_i / 10000000.0;
+					printf("\033[32m latitude %f longitude %f \033[0m\n", lat, lon );
+				}
+					   pos_node++;
 				node_cursor = mesh_state_next_node(node_cursor);
 			}
 			
