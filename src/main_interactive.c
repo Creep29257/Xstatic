@@ -38,6 +38,7 @@ int main(void)
     char serial_path[64];
     unsigned char handshake[HANDSHAKE_LEN];
     unsigned char wake[32];
+
 if (platform_serial_find_device(serial_path, sizeof(serial_path)) == 0)
     {
        fd= platform_serial_open(serial_path);
@@ -68,6 +69,29 @@ else
 	platform_serial_write(fd, wake, sizeof(wake));
 	usleep(100000);
 	platform_serial_write(fd, handshake, sizeof(handshake));
+	fd_set readfds; 
+	int max_fd = (fd < STDIN_FILENO ? STDIN_FILENO : fd);
+
+	while (running)
+{
+	FD_ZERO(&readfds);
+	FD_SET(fd, &readfds);
+	FD_SET(STDIN_FILENO, &readfds);
+	int ready = select((max_fd +1), &readfds, NULL, NULL, NULL);
+	if (ready <0)
+	{
+		perror("select");
+		break;
+	}
+	if (FD_ISSET(fd, &readfds))
+{
+	Printf("data avialable on serial Port");
+}
+if (FD_ISSET(STDIN_FILENO, &readfds))
+{
+	printf("keyboard input");
+}
+}
 
 	return 0;
 }
