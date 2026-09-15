@@ -143,7 +143,7 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t 
 					}
 				}
 			} 
-		}
+		
 		}
 	}
 	fs->frame_ready = 0;
