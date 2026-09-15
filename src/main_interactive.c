@@ -85,7 +85,7 @@ else
 	}
 	if (FD_ISSET(fd, &readfds))
 {
-	Printf("data avialable on serial Port");
+	printf("data avialable on serial Port");
 }
 if (FD_ISSET(STDIN_FILENO, &readfds))
 {
