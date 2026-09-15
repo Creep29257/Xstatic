@@ -86,13 +86,17 @@ else
 		break;
 	}
 	if (FD_ISSET(fd, &readfds))
-{
-	n = platform_serial_read(fd, buf, sizeof(buf));
-}
+	{
+		n = platform_serial_read(fd, buf, sizeof(buf));
+	}
 if (FD_ISSET(STDIN_FILENO, &readfds))
-{
-	printf("keyboard input");
-}
+	{
+	char input[64];
+	if (fgets(input, sizeof(input), stdin) != NULL)	
+		{
+			printf("tu as tape: %s", input);
+		}
+	}
 }
 
 	return 0;
