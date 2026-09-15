@@ -14,7 +14,7 @@ COMMON_SRCS = src/protocol/framing.c \
        third_party/nanopb/pb_decode.c \
        third_party/nanopb/pb_encode.c \
        third_party/nanopb/pb_common.c \
-       hw_model_name.c
+       src/protocol/hw_model_name.c
 
 INCLUDES = -Isrc/platform -Isrc/protocol -Isrc/protocol/generated \
            -Isrc/core -Ithird_party/nanopb -I.
