@@ -26,6 +26,7 @@
  */
 #include "platform/platform.h"
 #include "protocol/framing.h"
+#include "protocol/hw_model_name.h"
 #include "core/mesh_state.h"
 #include "protocol/generated/meshtastic/mesh.pb.h"
 #include "third_party/nanopb/pb_encode.h"
@@ -203,6 +204,36 @@ to_radio_encode(meshtastic_ToRadio *to_radio, uint8_t *out_buffer, size_t *out_l
 	return 0;
 }
 
+/*
+ * print_node_list: affiche les nodes connus, un bloc vertical par node
+ * pour rester lisible même avec beaucoup de nodes -- plus le format
+ * "tout sur une ligne avec des virgules" de la v0.1.
+ */
+static void
+print_node_list(mesh_state_t *state)
+{
+	mesh_node_t *node_cursor = mesh_state_first_node(state);
+	int pos_node = 1;
+
+	while (node_cursor != NULL)
+	{
+		printf("\033[36m[%d] %s\033[0m\n", pos_node, node_cursor->long_name);
+		printf("    num:      %u\n", node_cursor->num);
+		printf("    hw model: %s\n", hw_model_name(node_cursor->hw_model));
+		if (node_cursor->position.valid == 1)
+		{
+			double lat = node_cursor->position.latitude_i / 10000000.0;
+			double lon = node_cursor->position.longitude_i / 10000000.0;
+
+			printf("    position: %f, %f\n", lat, lon);
+		}
+		printf("\n");
+
+		pos_node++;
+		node_cursor = mesh_state_next_node(node_cursor);
+	}
+}
+
 int
 main(void)
 {
@@ -277,10 +308,10 @@ main(void)
 	}
 	if (config_complete == 0)
 	{
-		printf("no valid answer\n");
+		printf("pas de reponse valide\n");
 		return -1;
 	}
-	printf("device valid\n");
+	printf("device valide\n");
 
 	while (running)
 	{
@@ -324,23 +355,7 @@ main(void)
 
 				if (strcmp(input, "list") == 0)
 				{
-					mesh_node_t *node_cursor = mesh_state_first_node(state);
-					int pos_node = 1;
-
-					while (node_cursor != NULL)
-					{
-						printf("\033[32mNode %i    num =%u , node long_name = %s , node hw_model= %u \033[0m\n",
-						       pos_node, node_cursor->num, node_cursor->long_name, node_cursor->hw_model);
-						if (node_cursor->position.valid == 1)
-						{
-							double lat = node_cursor->position.latitude_i / 10000000.0;
-							double lon = node_cursor->position.longitude_i / 10000000.0;
-
-							printf("\033[32m latitude %f longitude %f \033[0m\n", lat, lon);
-						}
-						pos_node++;
-						node_cursor = mesh_state_next_node(node_cursor);
-					}
+					print_node_list(state);
 				}
 
 				if (strcmp(input, "help") == 0)
