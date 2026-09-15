@@ -38,6 +38,8 @@ int main(void)
     char serial_path[64];
     unsigned char handshake[HANDSHAKE_LEN];
     unsigned char wake[32];
+	unsigned char buf[64];
+	ssize_t n;
 
 if (platform_serial_find_device(serial_path, sizeof(serial_path)) == 0)
     {
@@ -85,7 +87,7 @@ else
 	}
 	if (FD_ISSET(fd, &readfds))
 {
-	printf("data avialable on serial Port");
+	n = platform_serial_read(fd, buf, sizeof(buf));
 }
 if (FD_ISSET(STDIN_FILENO, &readfds))
 {
