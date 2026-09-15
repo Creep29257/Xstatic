@@ -37,6 +37,8 @@
 #include <string.h>
 #include <sys/select.h>
 
+const char *VERSION ="0.2"
+
 typedef enum
 {
 	IDLE,
@@ -145,6 +147,19 @@ main(void)
 	int config_complete = 0;
 	interactive_state_t state_send = IDLE;
 	char nom_node[MESH_LONG_NAME_MAX];
+	
+	//clean screen
+	printf("\033[2J\033[H");
+	printf("Xstasic %s \n", VERSION);
+	printf("Copyright (c) 2026 Remi Assailly - BSD 2-Clause License\n");
+	printf("Uses Meshtastic protobufs (GPLv3) - see third_party/ for details\n");
+	printf("\n");
+	printf("Available commands:\n");
+	printf("  list          - show known nodes\n");
+	printf("  send          - send a message (node, then text)\n");
+	printf("  quit          - exit the program\n");
+	rintf("\n");
+	
 
 	if (platform_serial_find_device(serial_path, sizeof(serial_path)) == 0)
 	{
@@ -288,7 +303,7 @@ main(void)
 							{
 								platform_serial_write(fd, final_frame, encoded_len + 4);
 								printf("\033[32m======================================================================\n");
-								printf("msg envoye a: %s contenu %s\n", nom_node, input);
+								printf("msg envoye a: %s  %s\n", nom_node, input);
 								printf("======================================================================\033[0m\n");
 
 								platform_serial_close(fd);
