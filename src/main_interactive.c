@@ -256,12 +256,14 @@ main(void)
 				if (strcmp(input, "send") == 0)
 				{
 					printf("Send message to (node number or long name): ");
+					fflush(stdout);
 					state_send = AWAITING_NODE;
 				} else if (state_send == AWAITING_NODE)
 				{
 					strncpy(nom_node, input, MESH_LONG_NAME_MAX - 1);
 					nom_node[MESH_LONG_NAME_MAX - 1] = '\0';
 					printf("message text: ");
+					fflush(stdout);
 					state_send = AWAITING_MESSAGE;
 				} else if (state_send == AWAITING_MESSAGE)
 				{
