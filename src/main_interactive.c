@@ -38,12 +38,10 @@
 #include <sys/select.h>
 
 /* Taille du buffer utilisé pour résoudre from/to en long_name lisible.
-* Dérivée du champ long_name de mesh_node_t  */
+ * Dérivée du champ long_name de mesh_node_t  */
+#define NAME_BUF_SIZE sizeof(((mesh_node_t *)0)->long_name)
 
- #define NAME_BUF_SIZE sizeof(((mesh_node_t *)0)->long_name)
-
-
-const char *VERSION ="0.2";
+const char *VERSION = "0.2";
 
 typedef enum
 {
@@ -60,9 +58,11 @@ handle_sigint(int sig)
 	(void)sig;
 	running = 0;
 }
-void print_help(void)
+
+void
+print_help(void)
 {
-printf("Available commands:\n");
+	printf("Available commands:\n");
 	printf("  list          - show known nodes\n");
 	printf("  send          - send a message (node, then text)\n");
 	printf("  quit          - exit the program\n");
@@ -73,11 +73,13 @@ static void
 process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t *state)
 {
 	pb_istream_t stream = pb_istream_from_buffer(fs->payload, fs->payload_pos);
+
 	if (pb_decode(&stream, meshtastic_FromRadio_fields, msg))
 	{
 		if (msg->which_payload_variant == meshtastic_FromRadio_node_info_tag)
 		{
 			mesh_node_info_t info;
+
 			info.num = msg->node_info.num;
 			strncpy(info.long_name, msg->node_info.user.long_name, MESH_LONG_NAME_MAX);
 			info.long_name[MESH_LONG_NAME_MAX - 1] = '\0';
@@ -94,9 +96,11 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t 
 				fprintf(stderr, "mesh_state_add_or_update_node failed\n");
 			}
 		}
-		if(msg->which_payload_variant == meshtastic_FromRadio_packet_tag)
+
+		if (msg->which_payload_variant == meshtastic_FromRadio_packet_tag)
 		{
 			mesh_node_t *from_node = mesh_state_find_node(state, msg->packet.from);
+			mesh_node_t *to_node;
 			char buffer_from[NAME_BUF_SIZE];
 			char buffer_to[NAME_BUF_SIZE];
 
@@ -105,7 +109,7 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t 
 				snprintf(buffer_from, sizeof(buffer_from), "%s", from_node->long_name);
 			} else
 			{
-				snprintf(buffer_from, sizeof(buffer_from), "inconnu: %u", msg->packet.from);
+				snprintf(buffer_from, sizeof(buffer_from), "unknown: %u", msg->packet.from);
 			}
 
 			if (msg->packet.to == 4294967295)
@@ -113,37 +117,42 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t 
 				snprintf(buffer_to, sizeof(buffer_to), "Broadcast");
 			} else
 			{
-				mesh_node_t *to_node = mesh_state_find_node(state, msg->packet.to);
+				to_node = mesh_state_find_node(state, msg->packet.to);
 				if (to_node != NULL)
 				{
 					snprintf(buffer_to, sizeof(buffer_to), "%s", to_node->long_name);
 				} else
 				{
-					snprintf(buffer_to, sizeof(buffer_to), " %u long_name inconu", msg->packet.to);
+					snprintf(buffer_to, sizeof(buffer_to), "unknown: %u", msg->packet.to);
 				}
 			}
 
-
 			if (msg->packet.which_payload_variant == meshtastic_MeshPacket_decoded_tag)
 			{
-				/* Data.payload est un PB_BYTES_ARRAY_T (size + bytes[233]),
-				 * PAS null-terminé, copie  dans un buffer local
-				 * avec check sur la taille avant d'ajouter le '\0' manuel. */
-				size_t text_size = sizeof(msg->packet.decoded.payload.bytes) + 1;
 				if (msg->packet.decoded.portnum == meshtastic_PortNum_TEXT_MESSAGE_APP)
 				{
+					/* Data.payload est un PB_BYTES_ARRAY_T (size + bytes[233]),
+					 * PAS null-terminé, copie dans un buffer local avec check
+					 * sur la taille avant d'ajouter le '\0' manuel. */
+					size_t text_size = sizeof(msg->packet.decoded.payload.bytes) + 1;
+
 					if (msg->packet.decoded.payload.size <= (text_size - 1))
 					{
 						char text[text_size];
+
 						memcpy(text, msg->packet.decoded.payload.bytes, msg->packet.decoded.payload.size);
 						text[msg->packet.decoded.payload.size] = '\0';
-						printf("\033[32m===============================================================\n");
-						printf("from: %s to: %s msg: %s\n", buffer_from, buffer_to, text);
-						printf("===============================================================\033[0m \n");
+
+						/* Fond inversé pour ressortir dans le flux : vert
+						 * pour l'entete (from/to), jaune pour le contenu. */
+						printf("\033[7;32m from: %s -> %s \033[0m\n", buffer_from, buffer_to);
+						printf("\033[7;33m %s \033[0m\n", text);
 					}
 				}
-			} 
-		
+			} else
+			{
+				printf("\033[7;31m encrypted message from: %s to: %s \033[0m\n", buffer_from, buffer_to);
+			}
 		}
 	}
 	fs->frame_ready = 0;
@@ -197,8 +206,6 @@ to_radio_encode(meshtastic_ToRadio *to_radio, uint8_t *out_buffer, size_t *out_l
 int
 main(void)
 {
-	signal(SIGINT, handle_sigint);
-
 	int fd;
 	char serial_path[64];
 	unsigned char handshake[HANDSHAKE_LEN];
@@ -212,16 +219,18 @@ main(void)
 	int config_complete = 0;
 	interactive_state_t state_send = IDLE;
 	char nom_node[MESH_LONG_NAME_MAX];
-	
-	//clean screen
+	fd_set readfds;
+	int max_fd;
+
+	signal(SIGINT, handle_sigint);
+
+	/* clean screen */
 	printf("\033[2J\033[H");
-	printf("Xstasic %s \n", VERSION);
+	printf("Xstatic %s\n", VERSION);
 	printf("Copyright (c) 2026 Remi Assailly - BSD 2-Clause License\n");
 	printf("Uses Meshtastic protobufs (GPLv3) - see third_party/ for details\n");
 	printf("\n");
 	print_help();
-	
-	
 
 	if (platform_serial_find_device(serial_path, sizeof(serial_path)) == 0)
 	{
@@ -246,8 +255,7 @@ main(void)
 	usleep(100000);
 	platform_serial_write(fd, handshake, sizeof(handshake));
 
-	fd_set readfds;
-	int max_fd = (fd < STDIN_FILENO ? STDIN_FILENO : fd);
+	max_fd = (fd < STDIN_FILENO ? STDIN_FILENO : fd);
 
 	while (config_complete == 0 && attemps < 300)
 	{
@@ -269,16 +277,17 @@ main(void)
 	}
 	if (config_complete == 0)
 	{
-		printf("pas de reponse valide\n");
+		printf("no valid answer\n");
 		return -1;
 	}
-	printf("device valide\n");
+	printf("device valid\n");
 
 	while (running)
 	{
 		FD_ZERO(&readfds);
 		FD_SET(fd, &readfds);
 		FD_SET(STDIN_FILENO, &readfds);
+
 		int ready = select(max_fd + 1, &readfds, NULL, NULL, NULL);
 		if (ready < 0)
 		{
@@ -302,6 +311,7 @@ main(void)
 		if (FD_ISSET(STDIN_FILENO, &readfds))
 		{
 			char input[64];
+
 			if (fgets(input, sizeof(input), stdin) != NULL)
 			{
 				input[strcspn(input, "\n")] = '\0';
@@ -316,6 +326,7 @@ main(void)
 				{
 					mesh_node_t *node_cursor = mesh_state_first_node(state);
 					int pos_node = 1;
+
 					while (node_cursor != NULL)
 					{
 						printf("\033[32mNode %i    num =%u , node long_name = %s , node hw_model= %u \033[0m\n",
@@ -324,16 +335,19 @@ main(void)
 						{
 							double lat = node_cursor->position.latitude_i / 10000000.0;
 							double lon = node_cursor->position.longitude_i / 10000000.0;
+
 							printf("\033[32m latitude %f longitude %f \033[0m\n", lat, lon);
 						}
 						pos_node++;
 						node_cursor = mesh_state_next_node(node_cursor);
 					}
 				}
-				if(strcmp(input, "help") == 0)
+
+				if (strcmp(input, "help") == 0)
 				{
 					print_help();
 				}
+
 				if (strcmp(input, "send") == 0)
 				{
 					printf("Send message to (node number or long name): ");
@@ -349,6 +363,7 @@ main(void)
 				} else if (state_send == AWAITING_MESSAGE)
 				{
 					meshtastic_ToRadio to_radio = {0};
+
 					if (to_radio_construct(nom_node, input, &to_radio) == -1)
 					{
 						state_send = IDLE;
@@ -356,21 +371,21 @@ main(void)
 					{
 						uint8_t encoded_buffer[FRAMING_MAX_PAYLOAD];
 						size_t encoded_len;
+
 						if (to_radio_encode(&to_radio, encoded_buffer, &encoded_len) == -1)
 						{
 							state_send = IDLE;
 						} else
 						{
 							unsigned char final_frame[FRAMING_MAX_PAYLOAD + 4];
+
 							if (framing_message_construct(encoded_buffer, encoded_len, final_frame, sizeof(final_frame)) == -1)
 							{
 								state_send = IDLE;
 							} else
 							{
 								platform_serial_write(fd, final_frame, encoded_len + 4);
-								printf("\033[32m======================================================================\n");
-								printf("msg envoye a: %s  %s\n", nom_node, input);
-								printf("======================================================================\033[0m\n");
+								printf("\033[7;32m message sent to: %s -> %s \033[0m\n", nom_node, input);
 
 								platform_serial_close(fd);
 								fd = platform_serial_open(serial_path);
