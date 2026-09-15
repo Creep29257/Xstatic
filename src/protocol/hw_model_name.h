@@ -26,8 +26,7 @@
  */
 #ifndef HW_MODEL_NAME_H
 #define HW_MODEL_NAME_H
-
-#include "protocol/generated/meshtastic/mesh.pb.h"
+#include "generated/meshtastic/mesh.pb.h"
 
 const char *hw_model_name(meshtastic_HardwareModel model);
 

@@ -25,7 +25,7 @@
  * texte lisible. Générée depuis l'enum meshtastic_HardwareModel de
  * mesh.pb.h (protocole Meshtastic officiel).
  */
-#include "protocol/hw_model_name.h"
+#include "hw_model_name.h"
 
 const char *
 hw_model_name(meshtastic_HardwareModel model)
