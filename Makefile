@@ -13,7 +13,8 @@ COMMON_SRCS = src/protocol/framing.c \
        src/protocol/generated/meshtastic/xmodem.pb.c \
        third_party/nanopb/pb_decode.c \
        third_party/nanopb/pb_encode.c \
-       third_party/nanopb/pb_common.c
+       third_party/nanopb/pb_common.c \
+       hw_model_name.c
 
 INCLUDES = -Isrc/platform -Isrc/protocol -Isrc/protocol/generated \
            -Isrc/core -Ithird_party/nanopb -I.
