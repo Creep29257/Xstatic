@@ -37,6 +37,12 @@
 #include <string.h>
 #include <sys/select.h>
 
+/* Taille du buffer utilisé pour résoudre from/to en long_name lisible.
+* Dérivée du champ long_name de mesh_node_t  */
+
+ #define NAME_BUF_SIZE sizeof(((mesh_node_t *)0)->long_name)
+
+
 const char *VERSION ="0.2";
 
 typedef enum
@@ -87,6 +93,57 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t 
 			{
 				fprintf(stderr, "mesh_state_add_or_update_node failed\n");
 			}
+		}
+		if(msg->which_payload_variant == meshtastic_FromRadio_packet_tag)
+		{
+			mesh_node_t *from_node = mesh_state_find_node(state, msg->packet.from);
+			char buffer_from[NAME_BUF_SIZE];
+			char buffer_to[NAME_BUF_SIZE];
+
+			if (from_node != NULL)
+			{
+				snprintf(buffer_from, sizeof(buffer_from), "%s", from_node->long_name);
+			} else
+			{
+				snprintf(buffer_from, sizeof(buffer_from), "inconnu: %u", msg->packet.from);
+			}
+
+			if (msg->packet.to == 4294967295)
+			{
+				snprintf(buffer_to, sizeof(buffer_to), "Broadcast");
+			} else
+			{
+				mesh_node_t *to_node = mesh_state_find_node(state, msg->packet.to);
+				if (to_node != NULL)
+				{
+					snprintf(buffer_to, sizeof(buffer_to), "%s", to_node->long_name);
+				} else
+				{
+					snprintf(buffer_to, sizeof(buffer_to), " %u long_name inconu", msg->packet.to);
+				}
+			}
+
+
+			if (msg->packet.which_payload_variant == meshtastic_MeshPacket_decoded_tag)
+			{
+				/* Data.payload est un PB_BYTES_ARRAY_T (size + bytes[233]),
+				 * PAS null-terminé, copie  dans un buffer local
+				 * avec check sur la taille avant d'ajouter le '\0' manuel. */
+				size_t text_size = sizeof(msg->packet.decoded.payload.bytes) + 1;
+				if (msg->packet.decoded.portnum == meshtastic_PortNum_TEXT_MESSAGE_APP)
+				{
+					if (msg->packet.decoded.payload.size <= (text_size - 1))
+					{
+						char text[text_size];
+						memcpy(text, msg->packet.decoded.payload.bytes, msg->packet.decoded.payload.size);
+						text[msg->packet.decoded.payload.size] = '\0';
+						printf("\033[32m===============================================================\n");
+						printf("from: %s to: %s msg: %s\n", buffer_from, buffer_to, text);
+						printf("===============================================================\033[0m \n");
+					}
+				}
+			} 
+		}
 		}
 	}
 	fs->frame_ready = 0;
