@@ -251,7 +251,7 @@ main(void)
 
 				if (strcmp(input, "quit") == 0)
 				{
-					printf("exiting Xstatic");
+					printf("\033[31mexiting Xstatic\033[0m\n");
 					running = 0;
 				}
 
