@@ -161,10 +161,30 @@ if (FD_ISSET(STDIN_FILENO, &readfds))
 	char input[64];
 	if (fgets(input, sizeof(input), stdin) != NULL)	
 		{
-			printf("tu as tape: %s", input);
+			input[strcspn(input, "\n")] = '\0';
+			if (strcmp(input, "quit") == 0)
+			{
+			running = 0;
+			}
+			if (strcmp(input, "list") == 0)
+			{
+			mesh_node_t *node_cursor = mesh_state_first_node(state);
+			int pos_node = 1;
+			while (node_cursor != NULL)
+			{
+				printf("\033[32mNode %i    num =%u , node long_name = %s , node hw_model= %u \n\033[0m",
+				       pos_node, node_cursor->num, node_cursor->long_name, node_cursor->hw_model);
+				pos_node++;
+				node_cursor = mesh_state_next_node(node_cursor);
+			}
+			
+			}
+			
 		}
 	}
-}
 
+}
+	mesh_state_destroy(state);
+	platform_serial_close(fd);
 	return 0;
 }
