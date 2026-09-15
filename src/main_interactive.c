@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/select.h>
 
 /* Taille du buffer utilisé pour résoudre from/to en long_name lisible.
  * Dérivée du champ long_name de mesh_node_t  */
@@ -30,6 +31,34 @@ handle_sigint(int sig)
 	(void)sig;
 	running = 0;
 }
+static void
+process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t *state)
+{
+	pb_istream_t stream = pb_istream_from_buffer(fs->payload, fs->payload_pos);
+	if (pb_decode(&stream, meshtastic_FromRadio_fields, msg))
+	{
+		if (msg->which_payload_variant == meshtastic_FromRadio_node_info_tag)
+		{
+			mesh_node_info_t info;
+			info.num = msg->node_info.num;
+			strncpy(info.long_name, msg->node_info.user.long_name, MESH_LONG_NAME_MAX);
+			info.long_name[MESH_LONG_NAME_MAX - 1] = '\0';
+			info.hw_model = msg->node_info.user.hw_model;
+			info.position.valid = msg->node_info.has_position;
+			info.position.latitude_i = msg->node_info.position.latitude_i;
+			info.position.longitude_i = msg->node_info.position.longitude_i;
+			info.position.altitude = msg->node_info.position.altitude;
+			info.custom_name = NULL;
+
+			bool ok = mesh_state_add_or_update_node(state, &info);
+			if (!ok)
+			{
+				fprintf(stderr, "mesh_state_add_or_update_node failed\n");
+			}
+		}
+	}
+	fs->frame_ready = 0;
+}
 
 int main(void)
 {
@@ -40,6 +69,11 @@ int main(void)
     unsigned char wake[32];
 	unsigned char buf[64];
 	ssize_t n;
+	struct framing_state fs = {0};
+	meshtastic_FromRadio msg = meshtastic_FromRadio_init_zero;
+	mesh_state_t *state = mesh_state_init();
+	int attemps = 0;
+	int config_complete = 0;
 
 if (platform_serial_find_device(serial_path, sizeof(serial_path)) == 0)
     {
@@ -73,6 +107,31 @@ else
 	platform_serial_write(fd, handshake, sizeof(handshake));
 	fd_set readfds; 
 	int max_fd = (fd < STDIN_FILENO ? STDIN_FILENO : fd);
+		while (config_complete == 0 && attemps < 300)
+	{
+		n = platform_serial_read(fd, buf, sizeof(buf));
+		if (n > 0)
+		{
+			framing_feed(&fs, buf, n);
+			if (fs.frame_ready)
+			{
+				process_frame(&fs, &msg, state);
+				attemps = 0;
+				if (msg.which_payload_variant == meshtastic_FromRadio_config_complete_id_tag)
+				{
+					config_complete = 1;
+				}
+			}
+		}
+		attemps++;
+	}
+	if (config_complete == 0)
+	{
+		printf("pas de reponse valide\n");
+		return -1;
+	}
+	printf("device valide\n");
+
 
 	while (running)
 {
@@ -88,6 +147,14 @@ else
 	if (FD_ISSET(fd, &readfds))
 	{
 		n = platform_serial_read(fd, buf, sizeof(buf));
+		if(n>0)
+		{
+			framing_feed(&fs, buf, n);
+			if (fs.frame_ready)
+			{
+				process_frame(&fs,&msg, state);
+			}
+		}
 	}
 if (FD_ISSET(STDIN_FILENO, &readfds))
 	{
