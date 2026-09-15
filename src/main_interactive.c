@@ -37,7 +37,7 @@
 #include <string.h>
 #include <sys/select.h>
 
-const char *VERSION ="0.2"
+const char *VERSION ="0.2";
 
 typedef enum
 {
