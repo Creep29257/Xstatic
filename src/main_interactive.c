@@ -54,6 +54,14 @@ handle_sigint(int sig)
 	(void)sig;
 	running = 0;
 }
+void print_help(void)
+{
+printf("Available commands:\n");
+	printf("  list          - show known nodes\n");
+	printf("  send          - send a message (node, then text)\n");
+	printf("  quit          - exit the program\n");
+	printf("\n");
+}
 
 static void
 process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t *state)
@@ -154,11 +162,8 @@ main(void)
 	printf("Copyright (c) 2026 Remi Assailly - BSD 2-Clause License\n");
 	printf("Uses Meshtastic protobufs (GPLv3) - see third_party/ for details\n");
 	printf("\n");
-	printf("Available commands:\n");
-	printf("  list          - show known nodes\n");
-	printf("  send          - send a message (node, then text)\n");
-	printf("  quit          - exit the program\n");
-	printf("\n");
+	print_help();
+	
 	
 
 	if (platform_serial_find_device(serial_path, sizeof(serial_path)) == 0)
@@ -246,6 +251,7 @@ main(void)
 
 				if (strcmp(input, "quit") == 0)
 				{
+					printf("exiting Xstatic");
 					running = 0;
 				}
 
@@ -267,7 +273,10 @@ main(void)
 						node_cursor = mesh_state_next_node(node_cursor);
 					}
 				}
-
+				if(strcmp(input, "help") == 0)
+				{
+					print_help();
+				}
 				if (strcmp(input, "send") == 0)
 				{
 					printf("Send message to (node number or long name): ");
