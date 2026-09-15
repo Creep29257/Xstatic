@@ -158,7 +158,7 @@ main(void)
 	printf("  list          - show known nodes\n");
 	printf("  send          - send a message (node, then text)\n");
 	printf("  quit          - exit the program\n");
-	rintf("\n");
+	printf("\n");
 	
 
 	if (platform_serial_find_device(serial_path, sizeof(serial_path)) == 0)
