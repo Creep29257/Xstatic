@@ -38,6 +38,7 @@
 #include <string.h>
 #include <sys/select.h>
 #include "core/device_config.h"
+#include "protocol/config_enum_name.h"
 
 /* Taille du buffer utilisé pour résoudre from/to en long_name lisible.
  * Dérivée du champ long_name de mesh_node_t  */
@@ -67,6 +68,8 @@ print_help(void)
 	printf("Available commands:\n");
 	printf("  list          - show known nodes\n");
 	printf("  send          - send a message (node, then text)\n");
+	printf("  show config   - show device config summary (role, lora)\n");
+	printf("  show all config - show full device config dump\n");
 	printf("  quit          - exit the program\n");
 	printf("\n");
 }
@@ -242,6 +245,98 @@ print_node_list(mesh_state_t *state)
 		node_cursor = mesh_state_next_node(node_cursor);
 	}
 }
+static void
+print_device_config(device_config_t *dconfig, bool show_all)
+{
+	if (dconfig->has_device)
+	{
+		printf("role: %s\n", device_role_name(dconfig->device.role));
+	} else
+	{
+		printf("role: not received\n");
+	}
+
+	if (dconfig->has_lora)
+	{
+		printf("lora region: %s\n", lora_region_name(dconfig->lora.region));
+		printf("lora modem preset: %s\n", modem_preset_name(dconfig->lora.modem_preset));
+		printf("lora tx power: %d dBm\n", dconfig->lora.tx_power);
+		printf("lora hop limit: %d\n", dconfig->lora.hop_limit);
+	} else
+	{
+		printf("lora: not received\n");
+	}
+
+	if (!show_all)
+	{
+		return;
+	}
+
+	printf("\n-- show all config --\n\n");
+
+	if (dconfig->has_position)
+	{
+		printf("position broadcast secs: %u\n", dconfig->position.position_broadcast_secs);
+		printf("position gps enabled: %s\n", dconfig->position.gps_enabled ? "true" : "false");
+	} else
+	{
+		printf("position: not received\n");
+	}
+
+	if (dconfig->has_power)
+	{
+		printf("power is_power_saving: %s\n", dconfig->power.is_power_saving ? "true" : "false");
+		printf("power ls_secs: %u\n", dconfig->power.ls_secs);
+	} else
+	{
+		printf("power: not received\n");
+	}
+
+	if (dconfig->has_network)
+	{
+		printf("network wifi_enabled: %s\n", dconfig->network.wifi_enabled ? "true" : "false");
+		printf("network eth_enabled: %s\n", dconfig->network.eth_enabled ? "true" : "false");
+	} else
+	{
+		printf("network: not received\n");
+	}
+
+	if (dconfig->has_display)
+	{
+		printf("display screen_on_secs: %u\n", dconfig->display.screen_on_secs);
+		printf("display units: %d\n", dconfig->display.units);
+	} else
+	{
+		printf("display: not received\n");
+	}
+
+	if (dconfig->has_bluetooth)
+	{
+		printf("bluetooth enabled: %s\n", dconfig->bluetooth.enabled ? "true" : "false");
+		printf("bluetooth mode: %d\n", dconfig->bluetooth.mode);
+	} else
+	{
+		printf("bluetooth: not received\n");
+	}
+
+	if (dconfig->has_security)
+	{
+		printf("security serial_enabled: %s\n", dconfig->security.serial_enabled ? "true" : "false");
+		printf("security debug_log_api_enabled: %s\n", dconfig->security.debug_log_api_enabled ? "true" : "false");
+	} else
+	{
+		printf("security: not received\n");
+	}
+
+	if (dconfig->has_sessionkey)
+	{
+		printf("sessionkey: received (pas de champ utile a afficher)\n");
+	} else
+	{
+		printf("sessionkey: not received\n");
+	}
+}
+
 
 int
 main(void)
@@ -308,6 +403,8 @@ main(void)
 			if (fs.frame_ready)
 			{
 				process_frame(&fs, &msg, state, &device_config);
+				printf(".");
+    			fflush(stdout);
 				attemps = 0;
 				if (msg.which_payload_variant == meshtastic_FromRadio_config_complete_id_tag)
 				{
@@ -317,6 +414,8 @@ main(void)
 		}
 		attemps++;
 	}
+	printf("\n");
+
 	if (config_complete == 0)
 	{
 		printf("pas de reponse valide\n");
@@ -372,6 +471,16 @@ main(void)
 				if (strcmp(input, "help") == 0)
 				{
 					print_help();
+				}
+
+				if (strcmp(input, "show config") == 0)
+				{
+					print_device_config(&device_config, false);
+				}
+
+				if (strcmp(input, "show all config") == 0)
+				{
+					print_device_config(&device_config, true);
 				}
 
 				if (strcmp(input, "send") == 0)
