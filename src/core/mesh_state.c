@@ -90,7 +90,11 @@ bool mesh_state_add_or_update_node(mesh_state_t *state, mesh_node_info_t *node_i
    if(existing != NULL)
    {
     existing->hw_model = node_info->hw_model;
-    existing->position= node_info->position;
+    if (node_info->position.valid == 1)
+        {
+            existing->position = node_info->position;
+        }
+    
     strcpy(existing->long_name, node_info->long_name);
 
     if (existing->custom_name != NULL)
