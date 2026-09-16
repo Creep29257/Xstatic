@@ -166,3 +166,19 @@ mesh_node_t *mesh_state_next_node(mesh_node_t *node)
 {
   return node->next;
 }
+
+mesh_node_t *mesh_state_find_node_by_name(mesh_state_t *state, const char *name)
+{
+    mesh_node_t  *node_cursor = mesh_state_first_node(state);
+    
+    while(node_cursor != NULL)
+    {
+        if(strcmp(node_cursor->long_name,name) ==0)
+        {
+            return node_cursor;
+        }
+        
+		node_cursor = mesh_state_next_node(node_cursor); 
+    }
+    return NULL;
+}
