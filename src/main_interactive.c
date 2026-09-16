@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/select.h>
+#include "core/device_config.h"
 
 /* Taille du buffer utilisé pour résoudre from/to en long_name lisible.
  * Dérivée du champ long_name de mesh_node_t  */
@@ -71,7 +72,7 @@ print_help(void)
 }
 
 static void
-process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t *state)
+process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t *state, device_config_t *dconfig)
 {
 	pb_istream_t stream = pb_istream_from_buffer(fs->payload, fs->payload_pos);
 
@@ -150,11 +151,19 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t 
 						printf("\033[7;33m %s \033[0m\n", text);
 					}
 				}
+			
+				
 			} else
+
 			{
 				printf("\033[7;31m encrypted message from: %s to: %s \033[0m\n", buffer_from, buffer_to);
 			}
+
 		}
+	if (msg->which_payload_variant == meshtastic_FromRadio_config_tag)   /* <- NOUVEAU, ICI */
+    {
+        device_config_update(dconfig, &msg->config);
+    }	
 	}
 	fs->frame_ready = 0;
 }
@@ -246,6 +255,8 @@ main(void)
 	struct framing_state fs = {0};
 	meshtastic_FromRadio msg = meshtastic_FromRadio_init_zero;
 	mesh_state_t *state = mesh_state_init();
+	device_config_t device_config;
+	device_config_init(&device_config);
 	int attemps = 0;
 	int config_complete = 0;
 	interactive_state_t state_send = IDLE;
@@ -296,7 +307,7 @@ main(void)
 			framing_feed(&fs, buf, n);
 			if (fs.frame_ready)
 			{
-				process_frame(&fs, &msg, state);
+				process_frame(&fs, &msg, state, &device_config);
 				attemps = 0;
 				if (msg.which_payload_variant == meshtastic_FromRadio_config_complete_id_tag)
 				{
@@ -334,7 +345,7 @@ main(void)
 				framing_feed(&fs, buf, n);
 				if (fs.frame_ready)
 				{
-					process_frame(&fs, &msg, state);
+					process_frame(&fs, &msg, state, &device_config);
 				}
 			}
 		}
