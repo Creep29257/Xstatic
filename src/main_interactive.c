@@ -456,45 +456,80 @@ main(void)
 			if (fgets(input, sizeof(input), stdin) != NULL)
 			{
 				input[strcspn(input, "\n")] = '\0';
+				
+				interactive_state_t prev_state = state_send;
+				bool known_command = false;
 
 				if (strcmp(input, "quit") == 0)
 				{
 					printf("\033[31mexiting Xstatic\033[0m\n");
+					known_command = true;
 					running = 0;
 				}
 
 				if (strcmp(input, "list") == 0)
 				{
 					print_node_list(state);
+					known_command = true;
 				}
 
 				if (strcmp(input, "help") == 0)
 				{
 					print_help();
+					known_command = true;
 				}
 
 				if (strcmp(input, "show config") == 0)
 				{
 					print_device_config(&device_config, false);
+					known_command = true;
 				}
 
 				if (strcmp(input, "show all config") == 0)
 				{
 					print_device_config(&device_config, true);
+					known_command = true;
 				}
 
 				if (strcmp(input, "send") == 0)
 				{
 					printf("Send message to (node number or long name): ");
 					fflush(stdout);
+					known_command = true;
 					state_send = AWAITING_NODE;
 				} else if (state_send == AWAITING_NODE)
-				{
-					strncpy(nom_node, input, MESH_LONG_NAME_MAX - 1);
-					nom_node[MESH_LONG_NAME_MAX - 1] = '\0';
-					printf("message text: ");
-					fflush(stdout);
-					state_send = AWAITING_MESSAGE;
+					{
+						mesh_node_t *found = mesh_state_find_node_by_name(state, input);
+
+						if (found != NULL)
+						{
+							/* trouvé par nom -- convertir found->num en texte dans nom_node */
+							snprintf(nom_node, MESH_LONG_NAME_MAX, "%u", found->num);
+							printf("message text: ");
+							fflush(stdout);
+							state_send = AWAITING_MESSAGE;
+						}
+						else
+						{
+							char *endptr;
+							strtoul(input, &endptr, 10);
+
+							if (input[0] != '\0' && *endptr == '\0')
+							{
+								/* input est entierement numerique -- accepter tel quel */
+								strncpy(nom_node, input, MESH_LONG_NAME_MAX - 1);
+								nom_node[MESH_LONG_NAME_MAX - 1] = '\0';
+								printf("message text: ");
+								fflush(stdout);
+								state_send = AWAITING_MESSAGE;
+							}
+							else
+							{
+								printf("unknown long name, see list\n");
+								state_send = IDLE;
+							}
+						}
+					
 				} else if (state_send == AWAITING_MESSAGE)
 				{
 					meshtastic_ToRadio to_radio = {0};
@@ -529,6 +564,11 @@ main(void)
 						}
 					}
 				}
+				if (!known_command && prev_state == IDLE)
+				{
+					printf("unknown command, see 'help'\n");
+				}
+
 			}
 		}
 	}
