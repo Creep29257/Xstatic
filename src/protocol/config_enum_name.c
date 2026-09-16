@@ -1,4 +1,4 @@
-*
+/*
  * Copyright (c) 2026 Rémi Assailly All rights reserved.
  * remi@assailly.com
  *
