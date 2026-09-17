@@ -76,7 +76,7 @@ print_help(void)
 }
 
 static void
-process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t *state, device_config_t *dconfig)
+process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t *state, device_config_t *dconfig,message_history_t *history)
 {
 	pb_istream_t stream = pb_istream_from_buffer(fs->payload, fs->payload_pos);
 
@@ -148,7 +148,7 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t 
 						
 						memcpy(text, msg->packet.decoded.payload.bytes, msg->packet.decoded.payload.size);
 						text[msg->packet.decoded.payload.size] = '\0';
-						uint32_t assigned_id =message_history_add(&history, msg->packet.from, text);
+						uint32_t assigned_id =message_history_add(history, msg->packet.from, text);
 
 						/* Fond inversé pour ressortir dans le flux : vert
 						 * pour l'entete (from/to), jaune pour le contenu. */
@@ -407,7 +407,7 @@ main(void)
 			framing_feed(&fs, buf, n);
 			if (fs.frame_ready)
 			{
-				process_frame(&fs, &msg, state, &device_config);
+				process_frame(&fs, &msg, state, &device_config, &history);
 				printf(".");
     			fflush(stdout);
 				attemps = 0;
@@ -449,7 +449,7 @@ main(void)
 				framing_feed(&fs, buf, n);
 				if (fs.frame_ready)
 				{
-					process_frame(&fs, &msg, state, &device_config);
+					process_frame(&fs, &msg, state, &device_config,&history);
 				}
 			}
 		}

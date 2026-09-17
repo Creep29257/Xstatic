@@ -28,6 +28,8 @@
  */
 
 #include "message_history.h"
+#include <string.h>
+#include <stddef.h>
 
 void message_history_init(message_history_t *hist)
 {
