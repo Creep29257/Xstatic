@@ -39,6 +39,7 @@
 #include <sys/select.h>
 #include "core/device_config.h"
 #include "protocol/config_enum_name.h"
+#include "core/message_history.h"
 
 /* Taille du buffer utilisé pour résoudre from/to en long_name lisible.
  * Dérivée du champ long_name de mesh_node_t  */
@@ -144,13 +145,14 @@ process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t 
 					if (msg->packet.decoded.payload.size <= (text_size - 1))
 					{
 						char text[text_size];
-
+						
 						memcpy(text, msg->packet.decoded.payload.bytes, msg->packet.decoded.payload.size);
 						text[msg->packet.decoded.payload.size] = '\0';
+						uint32_t assigned_id =message_history_add(&history, msg->packet.from, text);
 
 						/* Fond inversé pour ressortir dans le flux : vert
 						 * pour l'entete (from/to), jaune pour le contenu. */
-						printf("\033[7;32m from: %s -> %s \033[0m\n", buffer_from, buffer_to);
+						printf("\033[7;32m  [%u] from: %s -> %s \033[0m\n", assigned_id,buffer_from, buffer_to);
 						printf("\033[7;33m %s \033[0m\n", text);
 					}
 				}
@@ -358,7 +360,10 @@ main(void)
 	char nom_node[MESH_LONG_NAME_MAX];
 	fd_set readfds;
 	int max_fd;
+	message_history_t history;
 
+
+	message_history_init(&history);
 	signal(SIGINT, handle_sigint);
 
 	/* clean screen */

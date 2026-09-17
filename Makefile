@@ -16,7 +16,8 @@ COMMON_SRCS = src/protocol/framing.c \
        third_party/nanopb/pb_common.c \
        src/protocol/hw_model_name.c \
        src/core/device_config.c \
-       src/protocol/config_enum_name.c
+       src/protocol/config_enum_name.c\
+       src/core/message_history.c
 
 INCLUDES = -Isrc/platform -Isrc/protocol -Isrc/protocol/generated \
            -Isrc/core -Ithird_party/nanopb -I.
