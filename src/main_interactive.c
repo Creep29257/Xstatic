@@ -26,11 +26,9 @@
  */
 #include "platform/platform.h"
 #include "protocol/framing.h"
-#include "protocol/hw_model_name.h"
 #include "core/mesh_state.h"
 #include "protocol/generated/meshtastic/mesh.pb.h"
 #include "third_party/nanopb/pb_encode.h"
-#include "third_party/nanopb/pb_decode.h"
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
@@ -38,12 +36,9 @@
 #include <string.h>
 #include <sys/select.h>
 #include "core/device_config.h"
-#include "protocol/config_enum_name.h"
 #include "core/message_history.h"
-
-/* Taille du buffer utilisé pour résoudre from/to en long_name lisible.
- * Dérivée du champ long_name de mesh_node_t  */
-#define NAME_BUF_SIZE sizeof(((mesh_node_t *)0)->long_name)
+#include "core/dispatch.h"
+#include "ui/cli_display.h"
 
 const char *VERSION = "0.2";
 
@@ -76,104 +71,6 @@ print_help(void)
 	printf("\n");
 }
 
-static void
-process_frame(struct framing_state *fs, meshtastic_FromRadio *msg, mesh_state_t *state, device_config_t *dconfig,message_history_t *history)
-{
-	pb_istream_t stream = pb_istream_from_buffer(fs->payload, fs->payload_pos);
-
-	if (pb_decode(&stream, meshtastic_FromRadio_fields, msg))
-	{
-		if (msg->which_payload_variant == meshtastic_FromRadio_node_info_tag)
-		{
-			mesh_node_info_t info;
-
-			info.num = msg->node_info.num;
-			strncpy(info.long_name, msg->node_info.user.long_name, MESH_LONG_NAME_MAX);
-			info.long_name[MESH_LONG_NAME_MAX - 1] = '\0';
-			info.hw_model = msg->node_info.user.hw_model;
-			info.position.valid = msg->node_info.has_position;
-			info.position.latitude_i = msg->node_info.position.latitude_i;
-			info.position.longitude_i = msg->node_info.position.longitude_i;
-			info.position.altitude = msg->node_info.position.altitude;
-			info.custom_name = NULL;
-
-			bool ok = mesh_state_add_or_update_node(state, &info);
-			if (!ok)
-			{
-				fprintf(stderr, "mesh_state_add_or_update_node failed\n");
-			}
-		}
-
-		if (msg->which_payload_variant == meshtastic_FromRadio_packet_tag)
-		{
-			mesh_node_t *from_node = mesh_state_find_node(state, msg->packet.from);
-			mesh_node_t *to_node;
-			char buffer_from[NAME_BUF_SIZE];
-			char buffer_to[NAME_BUF_SIZE];
-
-			if (from_node != NULL)
-			{
-				snprintf(buffer_from, sizeof(buffer_from), "%s", from_node->long_name);
-			} else
-			{
-				snprintf(buffer_from, sizeof(buffer_from), "unknown: %u", msg->packet.from);
-			}
-
-			if (msg->packet.to == 4294967295)
-			{
-				snprintf(buffer_to, sizeof(buffer_to), "Broadcast");
-			} else
-			{
-				to_node = mesh_state_find_node(state, msg->packet.to);
-				if (to_node != NULL)
-				{
-					snprintf(buffer_to, sizeof(buffer_to), "%s", to_node->long_name);
-				} else
-				{
-					snprintf(buffer_to, sizeof(buffer_to), "unknown: %u", msg->packet.to);
-				}
-			}
-
-			if (msg->packet.which_payload_variant == meshtastic_MeshPacket_decoded_tag)
-			{
-				if (msg->packet.decoded.portnum == meshtastic_PortNum_TEXT_MESSAGE_APP)
-				{
-					/* Data.payload est un PB_BYTES_ARRAY_T (size + bytes[233]),
-					 * PAS null-terminé, copie dans un buffer local avec check
-					 * sur la taille avant d'ajouter le '\0' manuel. */
-					size_t text_size = sizeof(msg->packet.decoded.payload.bytes) + 1;
-
-					if (msg->packet.decoded.payload.size <= (text_size - 1))
-					{
-						char text[text_size];
-						
-						memcpy(text, msg->packet.decoded.payload.bytes, msg->packet.decoded.payload.size);
-						text[msg->packet.decoded.payload.size] = '\0';
-						uint32_t assigned_id =message_history_add(history, msg->packet.from, text);
-
-						/* Fond inversé pour ressortir dans le flux : vert
-						 * pour l'entete (from/to), jaune pour le contenu. */
-						printf("\033[7;32m  [%u] from: %s -> %s \033[0m\n", assigned_id,buffer_from, buffer_to);
-						printf("\033[7;33m %s \033[0m\n", text);
-					}
-				}
-			
-				
-			} else
-
-			{
-				printf("\033[7;31m encrypted message from: %s to: %s \033[0m\n", buffer_from, buffer_to);
-			}
-
-		}
-	if (msg->which_payload_variant == meshtastic_FromRadio_config_tag)   /* <- NOUVEAU, ICI */
-    {
-        device_config_update(dconfig, &msg->config);
-    }	
-	}
-	fs->frame_ready = 0;
-}
-
 int
 to_radio_construct(char *to_str, char *message, meshtastic_ToRadio *out)
 {
@@ -192,7 +89,8 @@ to_radio_construct(char *to_str, char *message, meshtastic_ToRadio *out)
 	{
 		memcpy(out->packet.decoded.payload.bytes, message, strlen(message));
 		out->packet.decoded.payload.size = strlen(message);
-	} else
+	}
+	else
 	{
 		fprintf(stderr, "to_radio_construct : message is too long\n");
 		return -1;
@@ -219,128 +117,6 @@ to_radio_encode(meshtastic_ToRadio *to_radio, uint8_t *out_buffer, size_t *out_l
 	return 0;
 }
 
-/*
- * print_node_list: affiche les nodes connus, un bloc vertical par node
- * pour rester lisible même avec beaucoup de nodes -- plus le format
- * "tout sur une ligne avec des virgules" de la v0.1.
- */
-static void
-print_node_list(mesh_state_t *state)
-{
-	mesh_node_t *node_cursor = mesh_state_first_node(state);
-	int pos_node = 1;
-
-	while (node_cursor != NULL)
-	{
-		printf("\033[36m[%d] %s\033[0m\n", pos_node, node_cursor->long_name);
-		printf("    num:      %u\n", node_cursor->num);
-		printf("    hw model: %s\n", hw_model_name(node_cursor->hw_model));
-		if (node_cursor->position.valid == 1)
-		{
-			double lat = node_cursor->position.latitude_i / 10000000.0;
-			double lon = node_cursor->position.longitude_i / 10000000.0;
-
-			printf("    position: %f, %f\n", lat, lon);
-		}
-		printf("\n");
-
-		pos_node++;
-		node_cursor = mesh_state_next_node(node_cursor);
-	}
-}
-static void
-print_device_config(device_config_t *dconfig, bool show_all)
-{
-	if (dconfig->has_device)
-	{
-		printf("role: %s\n", device_role_name(dconfig->device.role));
-	} else
-	{
-		printf("role: not received\n");
-	}
-
-	if (dconfig->has_lora)
-	{
-		printf("lora region: %s\n", lora_region_name(dconfig->lora.region));
-		printf("lora modem preset: %s\n", modem_preset_name(dconfig->lora.modem_preset));
-		printf("lora tx power: %d dBm\n", dconfig->lora.tx_power);
-		printf("lora hop limit: %d\n", dconfig->lora.hop_limit);
-	} else
-	{
-		printf("lora: not received\n");
-	}
-
-	if (!show_all)
-	{
-		return;
-	}
-
-	printf("\n-- show all config --\n\n");
-
-	if (dconfig->has_position)
-	{
-		printf("position broadcast secs: %u\n", dconfig->position.position_broadcast_secs);
-		printf("position gps enabled: %s\n", dconfig->position.gps_enabled ? "true" : "false");
-	} else
-	{
-		printf("position: not received\n");
-	}
-
-	if (dconfig->has_power)
-	{
-		printf("power is_power_saving: %s\n", dconfig->power.is_power_saving ? "true" : "false");
-		printf("power ls_secs: %u\n", dconfig->power.ls_secs);
-	} else
-	{
-		printf("power: not received\n");
-	}
-
-	if (dconfig->has_network)
-	{
-		printf("network wifi_enabled: %s\n", dconfig->network.wifi_enabled ? "true" : "false");
-		printf("network eth_enabled: %s\n", dconfig->network.eth_enabled ? "true" : "false");
-	} else
-	{
-		printf("network: not received\n");
-	}
-
-	if (dconfig->has_display)
-	{
-		printf("display screen_on_secs: %u\n", dconfig->display.screen_on_secs);
-		printf("display units: %d\n", dconfig->display.units);
-	} else
-	{
-		printf("display: not received\n");
-	}
-
-	if (dconfig->has_bluetooth)
-	{
-		printf("bluetooth enabled: %s\n", dconfig->bluetooth.enabled ? "true" : "false");
-		printf("bluetooth mode: %d\n", dconfig->bluetooth.mode);
-	} else
-	{
-		printf("bluetooth: not received\n");
-	}
-
-	if (dconfig->has_security)
-	{
-		printf("security serial_enabled: %s\n", dconfig->security.serial_enabled ? "true" : "false");
-		printf("security debug_log_api_enabled: %s\n", dconfig->security.debug_log_api_enabled ? "true" : "false");
-	} else
-	{
-		printf("security: not received\n");
-	}
-
-	if (dconfig->has_sessionkey)
-	{
-		printf("sessionkey: received (pas de champ utile a afficher)\n");
-	} else
-	{
-		printf("sessionkey: not received\n");
-	}
-}
-
-
 int
 main(void)
 {
@@ -363,7 +139,6 @@ main(void)
 	int max_fd;
 	message_history_t history;
 
-
 	message_history_init(&history);
 	signal(SIGINT, handle_sigint);
 
@@ -378,7 +153,8 @@ main(void)
 	if (platform_serial_find_device(serial_path, sizeof(serial_path)) == 0)
 	{
 		fd = platform_serial_open(serial_path);
-	} else
+	}
+	else
 	{
 		return -1;
 	}
@@ -408,9 +184,9 @@ main(void)
 			framing_feed(&fs, buf, n);
 			if (fs.frame_ready)
 			{
-				process_frame(&fs, &msg, state, &device_config, &history);
+				dispatch_process_frame(&fs, &msg, state, &device_config, &history);
 				printf(".");
-    			fflush(stdout);
+				fflush(stdout);
 				attemps = 0;
 				if (msg.which_payload_variant == meshtastic_FromRadio_config_complete_id_tag)
 				{
@@ -450,7 +226,7 @@ main(void)
 				framing_feed(&fs, buf, n);
 				if (fs.frame_ready)
 				{
-					process_frame(&fs, &msg, state, &device_config,&history);
+					dispatch_process_frame(&fs, &msg, state, &device_config, &history);
 				}
 			}
 		}
@@ -462,7 +238,7 @@ main(void)
 			if (fgets(input, sizeof(input), stdin) != NULL)
 			{
 				input[strcspn(input, "\n")] = '\0';
-				
+
 				interactive_state_t prev_state = state_send;
 				bool known_command = false;
 
@@ -475,7 +251,7 @@ main(void)
 
 				if (strcmp(input, "list") == 0)
 				{
-					print_node_list(state);
+					cli_display_node_list(state);
 					known_command = true;
 				}
 
@@ -487,119 +263,116 @@ main(void)
 
 				if (strcmp(input, "show config") == 0)
 				{
-					print_device_config(&device_config, false);
+					cli_display_device_config(&device_config, false);
 					known_command = true;
 				}
 
 				if (strcmp(input, "show all config") == 0)
 				{
-					print_device_config(&device_config, true);
+					cli_display_device_config(&device_config, true);
 					known_command = true;
 				}
 
-				
-
 				if (strcmp(input, "send") == 0)
+				{
+					printf("Send message to (node number or long name): ");
+					fflush(stdout);
+					known_command = true;
+					state_send = AWAITING_NODE;
+				}
+				else if (strncmp(input, "reply ", 6) == 0)
+				{
+					char *endptr;
+					uint32_t reply_id = (uint32_t)strtoul((input + 6), &endptr, 10);
+					message_entry_t *found_msg = message_history_find_by_id(&history, reply_id);
+
+					if (found_msg == NULL)
 					{
-						printf("Send message to (node number or long name): ");
-						fflush(stdout);
-						known_command = true;
-						state_send = AWAITING_NODE;
+						printf("message id not found\n");
 					}
-					else if (strncmp(input, "reply ", 6) == 0)
+					else
+					{
+						snprintf(nom_node, MESH_LONG_NAME_MAX, "%u", found_msg->num);
+						printf("message text: ");
+						fflush(stdout);
+						state_send = AWAITING_MESSAGE;
+					}
+					known_command = true;
+				}
+				else if (state_send == AWAITING_NODE)
+				{
+					mesh_node_t *found = mesh_state_find_node_by_name(state, input);
+
+					if (found != NULL)
+					{
+						/* trouvé par nom -- convertir found->num en texte dans nom_node */
+						snprintf(nom_node, MESH_LONG_NAME_MAX, "%u", found->num);
+						printf("message text: ");
+						fflush(stdout);
+						state_send = AWAITING_MESSAGE;
+					}
+					else
 					{
 						char *endptr;
-						uint32_t reply_id = (uint32_t)strtoul((input + 6), &endptr, 10);
-						message_entry_t *found_msg = message_history_find_by_id(&history, reply_id);
+						strtoul(input, &endptr, 10);
 
-						if (found_msg == NULL)
+						if (input[0] != '\0' && *endptr == '\0')
 						{
-							printf("message id not found\n");
-						}
-						else
-						{
-							snprintf(nom_node, MESH_LONG_NAME_MAX, "%u", found_msg->num);
-							printf("message text: ");
-							fflush(stdout);
-							state_send = AWAITING_MESSAGE;
-						}
-						known_command = true;
-					}
-					else if (state_send == AWAITING_NODE)
-					{
-						mesh_node_t *found = mesh_state_find_node_by_name(state, input);
-
-						if (found != NULL)
-						{
-							/* trouvé par nom -- convertir found->num en texte dans nom_node */
-							snprintf(nom_node, MESH_LONG_NAME_MAX, "%u", found->num);
+							/* input est entierement numerique -- accepter tel quel */
+							strncpy(nom_node, input, MESH_LONG_NAME_MAX - 1);
+							nom_node[MESH_LONG_NAME_MAX - 1] = '\0';
 							printf("message text: ");
 							fflush(stdout);
 							state_send = AWAITING_MESSAGE;
 						}
 						else
 						{
-							char *endptr;
-							strtoul(input, &endptr, 10);
-
-							if (input[0] != '\0' && *endptr == '\0')
-							{
-								/* input est entierement numerique -- accepter tel quel */
-								strncpy(nom_node, input, MESH_LONG_NAME_MAX - 1);
-								nom_node[MESH_LONG_NAME_MAX - 1] = '\0';
-								printf("message text: ");
-								fflush(stdout);
-								state_send = AWAITING_MESSAGE;
-							}
-							else
-							{
-								printf("unknown long name, see list\n");
-								state_send = IDLE;
-							}
+							printf("unknown long name, see list\n");
+							state_send = IDLE;
 						}
 					}
-					else if (state_send == AWAITING_MESSAGE)
-					{
-						meshtastic_ToRadio to_radio = {0};
+				}
+				else if (state_send == AWAITING_MESSAGE)
+				{
+					meshtastic_ToRadio to_radio = {0};
 
-						if (to_radio_construct(nom_node, input, &to_radio) == -1)
+					if (to_radio_construct(nom_node, input, &to_radio) == -1)
+					{
+						state_send = IDLE;
+					}
+					else
+					{
+						uint8_t encoded_buffer[FRAMING_MAX_PAYLOAD];
+						size_t encoded_len;
+
+						if (to_radio_encode(&to_radio, encoded_buffer, &encoded_len) == -1)
 						{
 							state_send = IDLE;
 						}
 						else
 						{
-							uint8_t encoded_buffer[FRAMING_MAX_PAYLOAD];
-							size_t encoded_len;
+							unsigned char final_frame[FRAMING_MAX_PAYLOAD + 4];
 
-							if (to_radio_encode(&to_radio, encoded_buffer, &encoded_len) == -1)
+							if (framing_message_construct(encoded_buffer, encoded_len, final_frame, sizeof(final_frame)) == -1)
 							{
 								state_send = IDLE;
 							}
 							else
 							{
-								unsigned char final_frame[FRAMING_MAX_PAYLOAD + 4];
+								platform_serial_write(fd, final_frame, encoded_len + 4);
+								printf("\033[7;32m message sent to: %s -> %s \033[0m\n", nom_node, input);
 
-								if (framing_message_construct(encoded_buffer, encoded_len, final_frame, sizeof(final_frame)) == -1)
-								{
-									state_send = IDLE;
-								}
-								else
-								{
-									platform_serial_write(fd, final_frame, encoded_len + 4);
-									printf("\033[7;32m message sent to: %s -> %s \033[0m\n", nom_node, input);
-
-									platform_serial_close(fd);
-									fd = platform_serial_open(serial_path);
-									state_send = IDLE;
-								}
+								platform_serial_close(fd);
+								fd = platform_serial_open(serial_path);
+								state_send = IDLE;
 							}
 						}
 					}
+				}
 				if (!known_command && prev_state == IDLE)
 				{
 					printf("unknown command, see 'help'\n");
 				}
-
 			}
 		}
 	}
