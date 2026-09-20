@@ -497,33 +497,35 @@ main(void)
 					known_command = true;
 				}
 
-				if (strncmp(input, "reply ", 6) == 0)
-				{
-					char *endptr;
-					uint32_t reply_id = strtoul((input+6), &endptr, 10);
-					message_entry_t *found_msg = message_history_find_by_id(&history,reply_id);
-					if(found_msg == NULL)
-					{
-						printf("message id not found\n");
-					}
-					else
-					{
-						snprintf(nom_node, MESH_LONG_NAME_MAX, "%u", found_msg->num);
-						printf("message text: ");
-						fflush(stdout);
-						state_send = AWAITING_MESSAGE;
-					}
-				known_command = true;
-
-				}
+				
 
 				if (strcmp(input, "send") == 0)
-				{
-					printf("Send message to (node number or long name): ");
-					fflush(stdout);
-					known_command = true;
-					state_send = AWAITING_NODE;
-				} else if (state_send == AWAITING_NODE)
+					{
+						printf("Send message to (node number or long name): ");
+						fflush(stdout);
+						known_command = true;
+						state_send = AWAITING_NODE;
+					}
+					else if (strncmp(input, "reply ", 6) == 0)
+					{
+						char *endptr;
+						uint32_t reply_id = (uint32_t)strtoul((input + 6), &endptr, 10);
+						message_entry_t *found_msg = message_history_find_by_id(&history, reply_id);
+
+						if (found_msg == NULL)
+						{
+							printf("message id not found\n");
+						}
+						else
+						{
+							snprintf(nom_node, MESH_LONG_NAME_MAX, "%u", found_msg->num);
+							printf("message text: ");
+							fflush(stdout);
+							state_send = AWAITING_MESSAGE;
+						}
+						known_command = true;
+					}
+					else if (state_send == AWAITING_NODE)
 					{
 						mesh_node_t *found = mesh_state_find_node_by_name(state, input);
 
@@ -555,41 +557,44 @@ main(void)
 								state_send = IDLE;
 							}
 						}
-					
-				} else if (state_send == AWAITING_MESSAGE)
-				{
-					meshtastic_ToRadio to_radio = {0};
-
-					if (to_radio_construct(nom_node, input, &to_radio) == -1)
+					}
+					else if (state_send == AWAITING_MESSAGE)
 					{
-						state_send = IDLE;
-					} else
-					{
-						uint8_t encoded_buffer[FRAMING_MAX_PAYLOAD];
-						size_t encoded_len;
+						meshtastic_ToRadio to_radio = {0};
 
-						if (to_radio_encode(&to_radio, encoded_buffer, &encoded_len) == -1)
+						if (to_radio_construct(nom_node, input, &to_radio) == -1)
 						{
 							state_send = IDLE;
-						} else
+						}
+						else
 						{
-							unsigned char final_frame[FRAMING_MAX_PAYLOAD + 4];
+							uint8_t encoded_buffer[FRAMING_MAX_PAYLOAD];
+							size_t encoded_len;
 
-							if (framing_message_construct(encoded_buffer, encoded_len, final_frame, sizeof(final_frame)) == -1)
+							if (to_radio_encode(&to_radio, encoded_buffer, &encoded_len) == -1)
 							{
 								state_send = IDLE;
-							} else
+							}
+							else
 							{
-								platform_serial_write(fd, final_frame, encoded_len + 4);
-								printf("\033[7;32m message sent to: %s -> %s \033[0m\n", nom_node, input);
+								unsigned char final_frame[FRAMING_MAX_PAYLOAD + 4];
 
-								platform_serial_close(fd);
-								fd = platform_serial_open(serial_path);
-								state_send = IDLE;
+								if (framing_message_construct(encoded_buffer, encoded_len, final_frame, sizeof(final_frame)) == -1)
+								{
+									state_send = IDLE;
+								}
+								else
+								{
+									platform_serial_write(fd, final_frame, encoded_len + 4);
+									printf("\033[7;32m message sent to: %s -> %s \033[0m\n", nom_node, input);
+
+									platform_serial_close(fd);
+									fd = platform_serial_open(serial_path);
+									state_send = IDLE;
+								}
 							}
 						}
 					}
-				}
 				if (!known_command && prev_state == IDLE)
 				{
 					printf("unknown command, see 'help'\n");
