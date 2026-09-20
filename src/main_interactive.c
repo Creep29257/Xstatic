@@ -71,6 +71,7 @@ print_help(void)
 	printf("  send          - send a message (node, then text)\n");
 	printf("  show config   - show device config summary (role, lora)\n");
 	printf("  show all config - show full device config dump\n");
+	printf("  reply <id>    - reply to a received message by its [id]\n");
 	printf("  quit          - exit the program\n");
 	printf("\n");
 }
@@ -494,6 +495,26 @@ main(void)
 				{
 					print_device_config(&device_config, true);
 					known_command = true;
+				}
+
+				if (strncmp(input, "reply ", 6) == 0)
+				{
+					char *endptr;
+					uint32_t reply_id = strtoul((input+6), &endptr, 10);
+					message_entry_t *found_msg = message_history_find_by_id(&history,reply_id);
+					if(found_msg == NULL)
+					{
+						printf("message id not found\n");
+					}
+					else
+					{
+						snprintf(nom_node, MESH_LONG_NAME_MAX, "%u", found_msg->num);
+						printf("message text: ");
+						fflush(stdout);
+						state_send = AWAITING_MESSAGE;
+					}
+				known_command = true;
+
 				}
 
 				if (strcmp(input, "send") == 0)
