@@ -21,7 +21,7 @@ COMMON_SRCS = src/protocol/framing.c \
        src/core/dispatch.c \
        src/ui/cli_display.c \
 
-INCLUDES = -Isrc/platform -Isrc/protocol -Isrc/protocol/generated \
+INCLUDES = -Isrc -Isrc/platform -Isrc/protocol -Isrc/protocol/generated \
            -Isrc/core -Ithird_party/nanopb -I.
 
 all: $(TARGET) $(DEBUG_TARGET)
