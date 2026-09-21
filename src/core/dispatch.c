@@ -32,6 +32,7 @@
 #include "third_party/nanopb/pb_decode.h"
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #define NAME_BUF_SIZE sizeof(((mesh_node_t *)0)->long_name)
 
