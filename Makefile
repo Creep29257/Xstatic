@@ -1,6 +1,8 @@
 TARGET = Xstatic
 DEBUG_TARGET = Xstatic-debug
 
+CFLAGS = -Wall -Wextra -Wpedantic
+
 COMMON_SRCS = src/protocol/framing.c \
        src/core/mesh_state.c \
        src/protocol/generated/meshtastic/mesh.pb.c \
@@ -16,31 +18,31 @@ COMMON_SRCS = src/protocol/framing.c \
        third_party/nanopb/pb_common.c \
        src/protocol/hw_model_name.c \
        src/core/device_config.c \
-       src/protocol/config_enum_name.c\
+       src/protocol/config_enum_name.c \
        src/core/message_history.c \
        src/core/dispatch.c \
-       src/ui/cli_display.c \
+       src/ui/cli_display.c
 
 INCLUDES = -Isrc -Isrc/platform -Isrc/protocol -Isrc/protocol/generated \
            -Isrc/core -Ithird_party/nanopb -I.
 
 all: $(TARGET) $(DEBUG_TARGET)
 
-$(TARGET):
+$(TARGET): src/main_interactive.c $(COMMON_SRCS)
 	@case "`uname -s`" in \
 		FreeBSD) PLATFORM_SRC=src/platform/platform_freebsd.c ;; \
 		Linux)   PLATFORM_SRC=src/platform/platform_linux.c ;; \
 		*) echo "OS non supporte: `uname -s`" >&2; exit 1 ;; \
 	esac; \
-	cc -o $(TARGET) src/main_interactive.c $(COMMON_SRCS) $$PLATFORM_SRC $(INCLUDES)
+	cc $(CFLAGS) -o $(TARGET) src/main_interactive.c $(COMMON_SRCS) $$PLATFORM_SRC $(INCLUDES)
 
-$(DEBUG_TARGET):
+$(DEBUG_TARGET): src/main.c $(COMMON_SRCS)
 	@case "`uname -s`" in \
 		FreeBSD) PLATFORM_SRC=src/platform/platform_freebsd.c ;; \
 		Linux)   PLATFORM_SRC=src/platform/platform_linux.c ;; \
 		*) echo "OS non supporte: `uname -s`" >&2; exit 1 ;; \
 	esac; \
-	cc -o $(DEBUG_TARGET) src/main.c $(COMMON_SRCS) $$PLATFORM_SRC $(INCLUDES)
+	cc $(CFLAGS) -o $(DEBUG_TARGET) src/main.c $(COMMON_SRCS) $$PLATFORM_SRC $(INCLUDES)
 
 clean:
 	rm -f $(TARGET) $(DEBUG_TARGET)
