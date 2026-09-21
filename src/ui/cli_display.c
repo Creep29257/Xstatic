@@ -149,3 +149,15 @@ cli_display_device_config(device_config_t *dconfig, bool show_all)
 		printf("sessionkey: not received\n");
 	}
 }
+
+void cli_display_message_history(message_history_t *hist)
+{
+    uint8_t start_index, count;
+message_entry_t *entries = message_history_list(hist, &start_index, &count);
+
+for (uint8_t i = 0; i < count; i++)
+{
+    uint8_t idx = (start_index + i) % MESSAGE_HISTORY_SIZE;
+    printf("[%u] %s\n", entries[idx].id, entries[idx].text);
+}
+}

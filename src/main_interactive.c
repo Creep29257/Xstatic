@@ -67,6 +67,7 @@ print_help(void)
 	printf("  show config   - show device config summary (role, lora)\n");
 	printf("  show all config - show full device config dump\n");
 	printf("  reply <id>    - reply to a received message by its [id]\n");
+	printf("  history       - show received message history\n");
 	printf("  quit          - exit the program\n");
 	printf("\n");
 }
@@ -270,6 +271,12 @@ main(void)
 				if (strcmp(input, "show all config") == 0)
 				{
 					cli_display_device_config(&device_config, true);
+					known_command = true;
+				}
+
+				if (strcmp(input, "history") == 0)
+				{
+					cli_display_message_history(&history);
 					known_command = true;
 				}
 

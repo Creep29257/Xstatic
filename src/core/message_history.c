@@ -64,3 +64,20 @@ message_entry_t *message_history_find_by_id(message_history_t *hist, uint32_t id
     }
     return NULL;
 }
+
+message_entry_t *message_history_list(message_history_t *hist, uint8_t *start_index, uint8_t *count)
+{
+    if(hist->next_id <= MESSAGE_HISTORY_SIZE)
+    {
+        *count = hist->next_id; 
+        *start_index = 0;
+        
+    }
+
+    else
+    {
+        *count = MESSAGE_HISTORY_SIZE ;
+        *start_index = hist->write_index;
+    }
+    return hist->entries;
+}

@@ -35,5 +35,6 @@
 
 void cli_display_node_list(mesh_state_t *state);
 void cli_display_device_config(device_config_t *dconfig, bool show_all);
+void cli_display_message_history(message_history_t *hist);
 
 #endif
