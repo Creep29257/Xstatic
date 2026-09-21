@@ -131,6 +131,15 @@ cli_display_device_config(device_config_t *dconfig, bool show_all)
 	{
 		printf("bluetooth: not received\n");
 	}
+    if (dconfig->has_metadata)
+	{
+		printf("firmware: %s\n", dconfig->metadata.firmware_version);
+        printf("hw model: %s\n", hw_model_name(dconfig->metadata.hw_model));
+        printf("role: %s\n", device_role_name(dconfig->metadata.role));
+	} else
+	{
+		printf("metadata: not received\n");
+	}
 
 	if (dconfig->has_security)
 	{
