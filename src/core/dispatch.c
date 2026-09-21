@@ -30,6 +30,8 @@
 
 #include "core/dispatch.h"
 #include "third_party/nanopb/pb_decode.h"
+#include "protocol/hw_model_name.h"
+#include "protocol/config_enum_name.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -134,6 +136,16 @@ dispatch_process_frame(struct framing_state *fs, meshtastic_FromRadio *msg,
             strftime(date_buf, sizeof(date_buf), "%Y-%m-%d %H:%M:%S", tm_now);
             printf("device has rebooted at %s\n",date_buf);
         }
+        if (msg->which_payload_variant == meshtastic_FromRadio_metadata_tag)
+        {   
+            const char *hw_model = hw_model_name(msg->metadata.hw_model);
+            const char *node_role = device_role_name(msg->metadata.role);
+            printf(" node firmware version %s \n", msg->metadata.firmware_version);
+            printf("node model %s \n", hw_model );
+             printf("node_role %s \n", node_role );
+
+        }
+        
 	}
 	fs->frame_ready = 0;
 }
