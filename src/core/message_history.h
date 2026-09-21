@@ -57,5 +57,5 @@ typedef struct message_history message_history_t;
 void message_history_init(message_history_t *hist);
 uint32_t message_history_add(message_history_t *hist, uint32_t num, const char *text);
 message_entry_t *message_history_find_by_id(message_history_t *hist, uint32_t id);
-message_history_t *message_history_list(message_history_t *hist, uint8_t *start_index, uint8_t *count);
+message_entry_t *message_history_list(message_history_t *hist, uint8_t *start_index, uint8_t *count);
 #endif
