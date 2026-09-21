@@ -75,7 +75,7 @@ framing_feed(struct framing_state *state, const unsigned char *buf, size_t count
             break;
 
         case FRAMING_READ_LEN_HI:
-         FRAMING_READ_LEN_HI:
+        
             /* Longueur du payload encodée en big-endian sur 2 octets :
             * on reçoit d'abord l'octet de poids fort. */
             state->expected_len = (uint16_t)(byte << 8);
