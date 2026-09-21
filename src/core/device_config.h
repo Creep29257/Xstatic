@@ -28,6 +28,7 @@
 #define DEVICE_CONFIG_H
 
 #include "meshtastic/config.pb.h"
+#include "meshtastic/mesh.pb.h"
 
 /*
  * device_config_t garde l'etat cumule des 9 sous-configs recues via le
