@@ -1,56 +1,70 @@
-Xstatic V0.1
-==============
-Client lourd Meshtastic en C, interface X11 (Xlib), portable FreeBSD/Linux.
+Xstatic v0.2
+============
+Client lourd Meshtastic en C, portable FreeBSD/Linux. Interface en ligne
+de commande interactive pour cette version, interface Xlib prévue plus tard.
 
-usage:
-- -v view node traffic essential
-- -vv view all 
-- -s <nodenum> <message> send a message 
-- -l list known nodes
+Matériel testé : RAK4631 et Wio Tracker L1 (Seeed), sur FreeBSD.
+Linux : détection du port série testée de façon primitive seulement.
+
+Binaires :
+  Xstatic        -- client interactif
+  Xstatic-debug  -- client en ligne de commande, pour le débogage
+
+Commandes de Xstatic :
+  list             affiche les nodes connus
+  send             envoie un message (node, puis texte)
+  show config      résumé de la config du device (role, lora, firmware, modèle)
+  show all config  dump complet de la config du device
+  reply <id>       répond à un message reçu, par son [id]
+  history          affiche l'historique des messages reçus
+  quit             quitte le programme
+
+  Pour send, le node peut être désigné par son nom long ou par son numéro.
+
+Usage de Xstatic-debug :
+  -v                        vue du trafic des nodes (essentiel)
+  -vv                       vue complète de toutes les trames
+  -s <nodenum> <message>    envoie un message à un node
+  -l                        liste les nodes connus
 
 Architecture (voir doc/design) :
-  src/platform/  -- accès série, dépendant de l'OS (FreeBSD prioritaire, Linux en second)
+  src/platform/  -- accès série, dépendant de l'OS
   src/protocol/  -- framing + décodage protobuf Meshtastic (nanopb intégré)
-  src/core/      -- état du mesh (mesh_state), logique métier pure
-  src/ui/        -- interface graphique, Xlib (à venir)
+  src/core/      -- état du mesh, configuration du device, dispatch des trames
+  src/ui/        -- affichage en ligne de commande (Xlib : pas commencé)
 
-État actuel :
-  - Lecture du port série et parsing des trames Meshtastic (framing.c) : fait.
-  - Décodage protobuf (nanopb) des 18 tags de FromRadio.payload_variant : fait,
-    testé sur device réel (RAK4631).
-  - core/mesh_state : liste chaînée des nodes connus (num, nom, position...),
-    alimentée par les NodeInfo décodés : fait.
-  - Résolution des identifiants de node (from/to des MeshPacket) en noms
-    lisibles via mesh_state : fait.
-  - Gestion propre de l'arrêt (Ctrl+C / SIGINT) : fait.
-  - Interface Xlib : pas commencé.
-  - Détection automatique du device série FreeBSd et Linux (primitif, testé sous BSD pas sous Linux)
-  - Envoi de messages (case -s) : fait, testé et fiabilisé sur device réel
-    (RAK4631 + Wio Tracker L1). Nécessite une réouverture du port série
-    juste après l'écriture pour déclencher la transmission côté firmware
-    (comportement du firmware, pas un bug du client). Résolution du
-    destinataire par num uniquement pour l'instant.
-
-
-
-
+Fonctionnalités :
+  - Lecture du port série, parsing des trames, décodage protobuf (nanopb).
+  - Liste des nodes connus, avec résolution des identifiants en noms lisibles.
+  - Configuration et métadonnées du device (firmware, modèle).
+  - Envoi de messages et réponse à un message reçu.
+  - Historique des messages reçus.
+  - Détection de redémarrage du device et état de la file d'envoi radio.
 
 Compilation :
-  make        -- compile le binaire "Xstatic"
-  make clean  -- supprime le binaire compilé
+  make        -- compile les binaires Xstatic et Xstatic-debug
+  make clean  -- supprime les binaires
+  Aucune dépendance à installer : nanopb est intégré dans third_party/.
 
+Notes d'usage :
+  - FreeBSD : ajouter l'utilisateur au groupe "dialer" pour accéder au port
+    série (pw groupmod dialer -m <user>).
+  - Si le device ne répond pas au démarrage, le débrancher, le rebrancher
+    puis relancer le client (le firmware ignore parfois la demande initiale).
+  - L'envoi nécessite une réouverture du port série juste après l'écriture
+    (comportement du firmware, pas un bug du client).
+
+Limites connues :
+  - Linux : peu testé.
+  - Le parser de trames ne signale qu'une trame par appel : si une lecture
+    en ramène deux d'un coup, l'une est perdue (rare en pratique).
+  - Interface Xlib : pas commencée.
 
 Note sur l'usage de l'IA :
   Ce projet est développé avec l'assistance de Claude (Anthropic), utilisé
-  en mode "sparring" : le code métier (framing.c, mesh_state.c, main.c...)
-  est écrit par l'auteur humain, l'IA agissant comme guide/relecteur
-  (explications, détection d'erreurs, revue de conception) plutôt que
-  générateur de code. Quelques fichiers annexes (Makefile, scripts, docs)
-  ont pu être générés directement par l'IA.
-
-v0.1 cible (ordre révisé) : lire le port série, décoder les NodeInfo reçus,
-envoyer un message texte en ligne de commande. L'affichage dans une fenêtre
-Xlib est différé à une version ultérieure, priorité à un client CLI
-fonctionnel en lecture et en écriture avant l'interface graphique.
+  en mode "sparring" : le code métier est écrit par l'auteur humain, l'IA
+  agissant comme guide/relecteur (explications, détection d'erreurs, revue
+  de conception) plutôt que générateur de code. Quelques fichiers annexes
+  (Makefile, scripts, docs) ont pu être générés directement par l'IA.
 
 Licence : BSD 2-clause, voir LICENSE.
