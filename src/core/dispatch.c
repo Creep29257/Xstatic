@@ -142,8 +142,24 @@ dispatch_process_frame(struct framing_state *fs, meshtastic_FromRadio *msg,
             const char *node_role = device_role_name(msg->metadata.role);
             printf(" node firmware version %s \n", msg->metadata.firmware_version);
             printf("node model %s \n", hw_model );
-             printf("node_role %s \n", node_role );
+            printf("node_role %s \n", node_role );
 
+        }
+        if (msg->which_payload_variant == meshtastic_FromRadio_queueStatus_tag)
+        {
+            if (msg->queueStatus.res==0)
+            {
+                printf("queue: packet %u accepted (%d/%d slots free)\n",
+                (unsigned)msg->queueStatus.mesh_packet_id,
+                msg->queueStatus.free, msg->queueStatus.maxlen);
+            }
+            else
+            {
+                printf("queue: packet %u rejected (error %d, %d/%d slots free)\n",
+                (unsigned)msg->queueStatus.mesh_packet_id,
+                msg->queueStatus.res,
+                msg->queueStatus.free, msg->queueStatus.maxlen);
+            }
         }
         
 	}
