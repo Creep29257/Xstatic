@@ -122,6 +122,17 @@ dispatch_process_frame(struct framing_state *fs, meshtastic_FromRadio *msg,
 		{
 			device_config_update(dconfig, &msg->config);
 		}
+        if (msg->which_payload_variant == meshtastic_FromRadio_rebooted_tag)
+        {
+            time_t now;
+            struct tm *tm_now;
+            char date_buf[32];
+
+            now = time(NULL);
+            tm_now = localtime(&now);
+            strftime(date_buf, sizeof(date_buf), "%Y-%m-%d %H:%M:%S", tm_now);
+            printf("device has rebooted at %s\n",date_buf);
+        }
 	}
 	fs->frame_ready = 0;
 }
