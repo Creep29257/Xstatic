@@ -140,6 +140,7 @@ dispatch_process_frame(struct framing_state *fs, meshtastic_FromRadio *msg,
         {   
             const char *hw_model = hw_model_name(msg->metadata.hw_model);
             const char *node_role = device_role_name(msg->metadata.role);
+            device_config_set_metadata(dconfig, &msg->metadata);
             printf(" node firmware version %s \n", msg->metadata.firmware_version);
             printf("node model %s \n", hw_model );
             printf("node_role %s \n", node_role );

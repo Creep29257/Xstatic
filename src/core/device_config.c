@@ -38,6 +38,7 @@
     state->has_bluetooth =false;
     state->has_security = false;
     state->has_sessionkey =false;
+    state->has_metadata = false;
 
 }
 void device_config_update(device_config_t *state, const meshtastic_Config *cfg)
@@ -92,4 +93,10 @@ void device_config_update(device_config_t *state, const meshtastic_Config *cfg)
         default:
             break;
     }
+    device_config_set_metadata
+}
+void device_config_set_metadata(device_config_t *state, const meshtastic_DeviceMetadata *metadata)
+{
+    state->metadata= *metadata;
+    state->has_metadata = true;
 }

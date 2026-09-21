@@ -68,6 +68,10 @@ typedef struct
 
     bool has_sessionkey;
     meshtastic_Config_SessionkeyConfig sessionkey;
+
+    bool has_metadata;
+    meshtastic_DeviceMetadata metadata;
+
 } device_config_t;
 
 /*
@@ -85,4 +89,5 @@ void device_config_init(device_config_t *state);
  */
 void device_config_update(device_config_t *state, const meshtastic_Config *cfg);
 
+void device_config_set_metadata(device_config_t *state, const meshtastic_DeviceMetadata *metadata);
 #endif /* DEVICE_CONFIG_H */
