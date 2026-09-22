@@ -255,7 +255,7 @@ main(void)
 				
 				if (strcmp(input, "channels list") == 0)
 				{
-					cli_display_channel_list(&cstate);
+					cli_display_channel_list(&cstate, &device_config);
 					known_command=true;
 				}
 
