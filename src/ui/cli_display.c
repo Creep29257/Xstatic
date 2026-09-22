@@ -172,13 +172,20 @@ for (uint8_t i = 0; i < count; i++)
 	}
 }
 
-void cli_display_channel_list(channel_state_t *cstate)
+void cli_display_channel_list(channel_state_t *cstate, const device_config_t dconfig)
 {
 	 for(uint8_t i = 0; i<8; i++)
 	 { 
 		if(cstate->channels[i].role !=meshtastic_Channel_Role_DISABLED)
-		{
-			printf("[%u] channel %s \n",i, cstate->channels[i].name);
+		{ 
+			if(cstate_>channels[i].name[0] == '\0')
+			{
+				printf("[%u] channel %s (default) \n",i, "defaults", modem_preset_name(dconfig->lora.modem_preset));
+			}
+			else
+			{
+				printf("[%u] channel %s \n",i, cstate->channels[i].name);
+			}
 		}
 	 }
 }

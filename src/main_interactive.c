@@ -68,6 +68,7 @@ print_help(void)
 	printf("  show all config - show full device config dump\n");
 	printf("  reply <id>    - reply to a received message by its [id]\n");
 	printf("  history       - show received message history\n");
+	printf("  channels list   - show channels\n");
 	printf("  quit          - exit the program\n");
 	printf("\n");
 }
