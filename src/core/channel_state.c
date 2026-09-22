@@ -26,6 +26,7 @@
 #include "meshtastic/channel.pb.h"
 #include <stdbool.h>
 #include <string.h>
+#include "core/channel_state.h"
 
 void channel_state_init(channel_state_t *channels)
 {
