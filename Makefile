@@ -20,6 +20,7 @@ COMMON_SRCS = src/protocol/framing.c \
        src/core/device_config.c \
        src/protocol/config_enum_name.c \
        src/core/message_history.c \
+       src/core/channel_state.c \
        src/core/dispatch.c \
        src/ui/cli_display.c
 
