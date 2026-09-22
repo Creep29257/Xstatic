@@ -180,7 +180,7 @@ void cli_display_channel_list(channel_state_t *cstate, const device_config_t *dc
 		{ 
 			if(cstate->channels[i].name[0] == '\0')
 			{
-				printf("[%u] channel %s (default) \n",i, "defaults", modem_preset_name(dconfig->lora.modem_preset));
+				printf("[%u] channel %s (default: %s) \n",i, "defaults", modem_preset_name(dconfig->lora.modem_preset));
 			}
 			else
 			{
