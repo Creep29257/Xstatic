@@ -31,6 +31,7 @@
 #include "ui/cli_display.h"
 #include "protocol/hw_model_name.h"
 #include "protocol/config_enum_name.h"
+#include "core/channel_state.h"
 #include <stdio.h>
 
 void
