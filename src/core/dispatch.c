@@ -40,7 +40,7 @@
 
 void
 dispatch_process_frame(struct framing_state *fs, meshtastic_FromRadio *msg,
-    mesh_state_t *state, device_config_t *dconfig, message_history_t *history)
+    mesh_state_t *state, device_config_t *dconfig, message_history_t *history,channel_state_t *cstate)
 {
 	pb_istream_t stream = pb_istream_from_buffer(fs->payload, fs->payload_pos);
 
@@ -119,6 +119,10 @@ dispatch_process_frame(struct framing_state *fs, meshtastic_FromRadio *msg,
 			{
 				printf("\033[7;31m encrypted message from: %s to: %s \033[0m\n", buffer_from, buffer_to);
 			}
+		}
+		if (msg->which_payload_variant == meshtastic_FromRadio_channel_tag)
+		{
+			channel_state_update(cstate, &msg->channel);
 		}
 
 		if (msg->which_payload_variant == meshtastic_FromRadio_config_tag)

@@ -139,8 +139,10 @@ main(void)
 	fd_set readfds;
 	int max_fd;
 	message_history_t history;
+	channel_state_t cstate;
 
 	message_history_init(&history);
+	channel_state_init(&cstate);
 	signal(SIGINT, handle_sigint);
 
 	/* clean screen */
@@ -185,7 +187,7 @@ main(void)
 			framing_feed(&fs, buf, n);
 			if (fs.frame_ready)
 			{
-				dispatch_process_frame(&fs, &msg, state, &device_config, &history);
+				dispatch_process_frame(&fs, &msg, state, &device_config, &history, &cstate);
 				printf(".");
 				fflush(stdout);
 				attemps = 0;
@@ -227,7 +229,7 @@ main(void)
 				framing_feed(&fs, buf, n);
 				if (fs.frame_ready)
 				{
-					dispatch_process_frame(&fs, &msg, state, &device_config, &history);
+					dispatch_process_frame(&fs, &msg, state, &device_config, &history, &cstate);
 				}
 			}
 		}

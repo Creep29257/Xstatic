@@ -21,9 +21,7 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * main_interactive.c -- mode interactif (send + read + list + quit dans
- * une seule session), via select() sur le fd série et stdin.
- */
+ * device config.c */
 
  #include "device_config.h"
  

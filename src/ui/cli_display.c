@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-/* même header de licence BSD 2-clause que les autres fichiers */
+
 
 #include "ui/cli_display.h"
 #include "protocol/hw_model_name.h"
