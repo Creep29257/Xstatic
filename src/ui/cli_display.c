@@ -165,8 +165,19 @@ void cli_display_message_history(message_history_t *hist)
 message_entry_t *entries = message_history_list(hist, &start_index, &count);
 
 for (uint8_t i = 0; i < count; i++)
-{
-    uint8_t idx = (start_index + i) % MESSAGE_HISTORY_SIZE;
-    printf("[%u] %s\n", entries[idx].id, entries[idx].text);
+	{
+		uint8_t idx = (start_index + i) % MESSAGE_HISTORY_SIZE;
+		printf("[%u] %s\n", entries[idx].id, entries[idx].text);
+	}
 }
+
+void cli_display_channel_list(channel_state_t *cstate)
+{
+	 for(uint8_t i = 0; i<8; i++)
+	 { 
+		if(cstate->channels[i].has_channel)
+		{
+			printf("[%u] channel %s \n",i, cstate->channels[i].name);
+		}
+	 }
 }

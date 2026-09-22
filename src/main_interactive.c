@@ -251,6 +251,12 @@ main(void)
 					known_command = true;
 					running = 0;
 				}
+				
+				if (strcmp(input, "channels list") == 0)
+				{
+					cli_display_channel_list(cstate);
+					known_command=true;
+				}
 
 				if (strcmp(input, "list") == 0)
 				{
