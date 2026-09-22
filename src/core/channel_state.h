@@ -33,7 +33,10 @@ typedef struct
 {
     bool has_channel;
     char name[sizeof(((meshtastic_ChannelSettings *)0)->name)];
+    meshtastic_Channel_Role role;
     meshtastic_ChannelSettings_psk_t psk;
+    bool uplink_enabled;
+    bool downlink_enabled;
 } channel_slot_t;
 
 typedef struct
