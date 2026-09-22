@@ -33,8 +33,9 @@
 #include "core/mesh_state.h"
 #include "core/device_config.h"
 #include "core/message_history.h"
+#include "core/channel_state.h"
 void cli_display_node_list(mesh_state_t *state);
 void cli_display_device_config(device_config_t *dconfig, bool show_all);
 void cli_display_message_history(message_history_t *hist);
-
+void cli_display_channel_list(channel_state_t *cstate);
 #endif
