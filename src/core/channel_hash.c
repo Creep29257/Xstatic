@@ -35,18 +35,39 @@
 
 uint8_t channel_hash_compute(const channel_slot_t *slot)
 {
-uint8_t hash = 0;
+	static const uint8_t defaultpsk[16] = {0xd4, 0xf1, 0xbb, 0x3a, 0x20, 0x29, 0x07, 0x59,
+	                                        0xf0, 0xbc, 0xff, 0xab, 0xcf, 0x4e, 0x69, 0xbf};
+	uint8_t hash = 0;
+	uint8_t psk_bytes[32];
+	pb_size_t psk_size = slot->psk.size;
 
-for(size_t i = 0; i<sizeof(slot->name); i ++)
-    {
-        hash ^= slot->name[i];
-    }
-for (pb_size_t i=0; i<slot->psk.size; i++)
-    {
-        hash ^= slot->psk.bytes[i];
-    }
-    return hash;
-    
+	memcpy(psk_bytes, slot->psk.bytes, slot->psk.size);
+
+	if (psk_size == 1)
+	{
+		uint8_t psk_index = psk_bytes[0];
+
+		if (psk_index == 0)
+		{
+			psk_size = 0;
+		}
+		else
+		{
+			memcpy(psk_bytes, defaultpsk, sizeof(defaultpsk));
+			psk_size = sizeof(defaultpsk);
+			psk_bytes[psk_size - 1] = psk_bytes[psk_size - 1] + psk_index - 1;
+		}
+	}
+
+	for (size_t i = 0; i < sizeof(slot->name); i++)
+	{
+		hash ^= slot->name[i];
+	}
+	for (pb_size_t i = 0; i < psk_size; i++)
+	{
+		hash ^= psk_bytes[i];
+	}
+	return hash;
 }
 
 int channel_hash_find_index(const channel_state_t *cstate, uint8_t hash)
