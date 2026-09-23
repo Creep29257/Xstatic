@@ -115,6 +115,7 @@ dispatch_process_frame(struct framing_state *fs, meshtastic_FromRadio *msg,
 						uint32_t assigned_id = message_history_add(history, msg->packet.from, text, channel_hash_find_index(cstate, msg->packet.channel));
 						printf("\033[7;32m  [%u] from: %s -> %s \033[0m\n", assigned_id, buffer_from, buffer_to);
 						printf("\033[7;33m %s \033[0m\n", text);
+						printf("DEBUG received=%u slot0=%u slot1=%u\n", msg->packet.channel, cstate->channels[0].hash, cstate->channels[1].hash);
 					}
 				}
 			} else
