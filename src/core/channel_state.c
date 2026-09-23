@@ -27,6 +27,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "core/channel_state.h"
+#include "channel_hash.h"
 
 void channel_state_init(channel_state_t *channels)
 {
@@ -46,6 +47,7 @@ if(ch->index >=0 && ch->index <8)
   channels->channels[index].has_channel= true;
   memcpy(channels->channels[index].name,ch->settings.name,(sizeof(ch->settings.name)));
   channels->channels[index].psk = ch->settings.psk;
+  channels->channels[index].hash = channel_hash_compute(&channels->channels[index]);
   channels->channels[index].role = ch->role;
   channels->channels[index].uplink_enabled = ch->settings.uplink_enabled;
   channels->channels[index].downlink_enabled = ch->settings.downlink_enabled;

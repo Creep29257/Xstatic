@@ -37,13 +37,14 @@ void message_history_init(message_history_t *hist)
     hist->next_id = 0;
 }
 
-uint32_t message_history_add(message_history_t *hist, uint32_t num, const char *text)
+uint32_t message_history_add(message_history_t *hist, uint32_t num, const char *text, int8_t channel_index)
 {
     
     hist->entries[hist->write_index].id = hist->next_id;
     hist->entries[hist->write_index].num = num;
     strncpy(hist->entries[hist->write_index].text, text, sizeof(hist->entries[hist->write_index].text) - 1);
     hist->entries[hist->write_index].text[233] ='\0';
+    hist->entries[hist->write_index].channel_index = channel_index;
     hist->write_index = (hist->write_index + 1) % MESSAGE_HISTORY_SIZE;
     uint32_t assigned_id = hist->next_id;
     hist->next_id = hist->next_id + 1;
@@ -80,4 +81,17 @@ message_entry_t *message_history_list(message_history_t *hist, uint8_t *start_in
         *start_index = hist->write_index;
     }
     return hist->entries;
+}
+message_entry_t *message_history_find_repliable_by_id(message_history_t *hist, uint32_t id)
+{
+    message_entry_t *entry;
+   
+    
+    entry = message_history_find_by_id(hist, id);
+    if(entry == NULL || entry->channel_index == -1)
+    {
+        return NULL;
+    }
+    return entry;
+    
 }

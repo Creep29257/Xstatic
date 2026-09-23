@@ -26,37 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
-#ifndef MESSAGE_HISTORY_H
-#define MESSAGE_HISTORY_H
+#ifndef CHANNEL_HASH_H
+#define CHANNEL_HASH_H
 
 #include <stdint.h>
-#include <stdbool.h>
+#include "channel_state.h"
 
-#define MESSAGE_HISTORY_SIZE  20
 
-struct message_entry
-{
-   uint32_t id;
-   uint32_t num;
-   char text[234];
-   int8_t channel_index;
-};
 
-struct message_history
-{
-   struct message_entry entries[MESSAGE_HISTORY_SIZE];
-   uint8_t write_index;
-   uint32_t next_id;
+uint8_t channel_hash_compute(const channel_slot_t *slot);
+int channel_hash_find_index(const channel_state_t *cstate, uint8_t hash);
 
-};
-
-typedef struct message_entry message_entry_t;
-typedef struct message_history message_history_t;
-
-void message_history_init(message_history_t *hist);
-uint32_t message_history_add(message_history_t *hist, uint32_t num, const char *text, int8_t channel_index );
-message_entry_t *message_history_find_by_id(message_history_t *hist, uint32_t id);
-message_entry_t *message_history_list(message_history_t *hist, uint8_t *start_index, uint8_t *count);
-message_entry_t *message_history_find_repliable_by_id(message_history_t *hist, uint32_t id);
 #endif

@@ -300,7 +300,7 @@ main(void)
 				{
 					char *endptr;
 					uint32_t reply_id = (uint32_t)strtoul((input + 6), &endptr, 10);
-					message_entry_t *found_msg = message_history_find_by_id(&history, reply_id);
+					message_entry_t *found_msg = message_history_find_repliable_by_id(&history, reply_id);
 
 					if (found_msg == NULL)
 					{

@@ -37,6 +37,7 @@ typedef struct
     meshtastic_ChannelSettings_psk_t psk;
     bool uplink_enabled;
     bool downlink_enabled;
+    uint8_t hash;
 } channel_slot_t;
 
 typedef struct
