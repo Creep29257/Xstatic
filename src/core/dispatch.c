@@ -36,6 +36,7 @@
 #include <string.h>
 #include <time.h>
 #include "channel_hash.h"
+#include "ui/cli_display.h"
 
 #define NAME_BUF_SIZE sizeof(((mesh_node_t *)0)->long_name)
 
@@ -107,12 +108,21 @@ dispatch_process_frame(struct framing_state *fs, meshtastic_FromRadio *msg,
 					if (msg->packet.decoded.payload.size <= (text_size - 1))
 					{
 						char text[text_size];
+						char buf[32];
 
 						memcpy(text, msg->packet.decoded.payload.bytes, msg->packet.decoded.payload.size);
 						text[msg->packet.decoded.payload.size] = '\0';
 						uint32_t assigned_id = message_history_add(history, msg->packet.from, text, channel_hash_find_index(cstate, msg->packet.channel));
 
-						printf("\033[7;32m  [%u] from: %s -> %s \033[0m\n", assigned_id, buffer_from, buffer_to);
+						if (msg->packet.to == 4294967295)
+						{
+							channel_display_name(cstate, dconfig, channel_hash_find_index(cstate, msg->packet.channel), buf, sizeof(buf));
+							printf("\033[7;32m  [%u] from: %s -> %s (channel: %s) \033[0m\n", assigned_id, buffer_from, buffer_to, buf);
+						}
+						else
+						{
+							printf("\033[7;32m  [%u] from: %s -> %s \033[0m\n", assigned_id, buffer_from, buffer_to);
+						}
 						printf("\033[7;33m %s \033[0m\n", text);
 					}
 				}

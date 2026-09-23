@@ -285,7 +285,7 @@ main(void)
 
 				if (strcmp(input, "history") == 0)
 				{
-					cli_display_message_history(&history);
+					cli_display_message_history(&history, &cstate, &device_config);
 					known_command = true;
 				}
 

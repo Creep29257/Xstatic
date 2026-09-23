@@ -160,15 +160,17 @@ cli_display_device_config(device_config_t *dconfig, bool show_all)
 	}
 }
 
-void cli_display_message_history(message_history_t *hist)
+void cli_display_message_history(message_history_t *hist,channel_state_t *cstate, device_config_t *dconfig)
 {
     uint8_t start_index, count;
 message_entry_t *entries = message_history_list(hist, &start_index, &count);
 
 for (uint8_t i = 0; i < count; i++)
 	{
+		char buf[32];
 		uint8_t idx = (start_index + i) % MESSAGE_HISTORY_SIZE;
-		printf("[%u] %s\n", entries[idx].id, entries[idx].text);
+		channel_display_name(cstate, dconfig, entries[idx].channel_index, buf, sizeof(buf));
+		printf("[%u] channel %s %s\n", entries[idx].id, buf, entries[idx].text);
 	}
 }
 
@@ -188,4 +190,22 @@ void cli_display_channel_list(channel_state_t *cstate, const device_config_t *dc
 			}
 		}
 	 }
+}
+const char *channel_display_name(const channel_state_t *cstate, const device_config_t *dconfig, int8_t channel_index, char *buf, size_t buflen)
+{
+	if(channel_index == -1)
+	{
+		strncpy(buf,"Unknown channel",buflen);
+		buf[buflen - 1] ='\0';
+		return buf;
+	}
+	if(cstate->channels[channel_index].name[0] == '\0')
+	{
+		snprintf(buf, buflen, "%s", modem_preset_name(dconfig->lora.modem_preset));
+	}
+	else
+	{
+		snprintf(buf, buflen, "%s", cstate->channels[channel_index].name);
+	}
+	return buf;
 }
