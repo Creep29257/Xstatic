@@ -108,7 +108,6 @@ dispatch_process_frame(struct framing_state *fs, meshtastic_FromRadio *msg,
 					if (msg->packet.decoded.payload.size <= (text_size - 1))
 					{
 						char text[text_size];
-						char buf[32];
 
 						memcpy(text, msg->packet.decoded.payload.bytes, msg->packet.decoded.payload.size);
 						text[msg->packet.decoded.payload.size] = '\0';
