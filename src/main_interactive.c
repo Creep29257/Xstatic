@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <sys/select.h>
 #include "core/device_config.h"
 #include "core/message_history.h"
@@ -217,7 +218,11 @@ main(void)
 
 		int ready = select(max_fd + 1, &readfds, NULL, NULL, NULL);
 		if (ready < 0)
-		{
+		{	
+			if (errno == EINTR)
+				{
+					continue;
+				}
 			perror("select");
 			break;
 		}
