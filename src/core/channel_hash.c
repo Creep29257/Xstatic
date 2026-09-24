@@ -26,6 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * NOTE: ce module calcule le hash de channel Meshtastic (xorHash sur nom+PSK,
+ * fidèle à Channels::generateHash du firmware officiel), mais N'EST PAS
+ * utilisé actuellement par dispatch.c. Le champ MeshPacket.channel que le
+ * client reçoit via l'API série contient déjà l'index local du channel
+ * (0-7), pas un hash à résoudre côté client — le "hash trick" n'existe que
+ * temporairement, en interne au firmware du device, pendant le déchiffrement.
+ * Conservé pour référence / usage futur potentiel (ex: URLs de partage de
+ * channel meshtastic.org/e/#, qui encodent ce même hash).
+ */
 
 #include <stdbool.h>
 #include <string.h>
