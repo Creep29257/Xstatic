@@ -353,6 +353,11 @@ main(void)
 						}
 					}
 				}
+				else if (state_send == AWAITING_MESSAGE && input[0] == '\0')
+				{
+					printf("empty message, cancelled\n");
+					state_send = IDLE;
+				}			
 				else if (state_send == AWAITING_MESSAGE)
 				{
 					meshtastic_ToRadio to_radio = {0};
