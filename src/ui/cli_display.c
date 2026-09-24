@@ -174,19 +174,47 @@ for (uint8_t i = 0; i < count; i++)
 	}
 }
 
+static const char *channel_encryption_label(const channel_slot_t *slot)
+{
+	
+
+	if(slot->psk.size == 0)
+	{
+		
+		return "none";
+	}
+	else if (slot->psk.size == 1)
+	{
+		if(slot->psk.bytes[0] == 0)
+		{
+			
+			return "none";
+		}
+		else if (slot->psk.bytes[0] != 0)
+		{
+			
+			return "default key";
+		}
+	}
+	
+	
+	return "custom key";
+}
+
 void cli_display_channel_list(channel_state_t *cstate, const device_config_t *dconfig)
 {
 	 for(uint8_t i = 0; i<8; i++)
 	 { 
 		if(cstate->channels[i].role !=meshtastic_Channel_Role_DISABLED)
 		{ 
+			const char * psk_encryption_state = channel_encryption_label(&cstate->channels[i]);
 			if(cstate->channels[i].name[0] == '\0')
 			{
-				printf("[%u] channel %s (default: %s) \n",i, "defaults", modem_preset_name(dconfig->lora.modem_preset));
+				printf("[%u] channel %s (default: %s)  encryption %s \n",i, "defaults", modem_preset_name(dconfig->lora.modem_preset),psk_encryption_state);
 			}
 			else
 			{
-				printf("[%u] channel %s \n",i, cstate->channels[i].name);
+				printf("[%u] channel %s encryption %s \n",i, cstate->channels[i].name, psk_encryption_state);
 			}
 		}
 	 }
@@ -209,3 +237,4 @@ const char *channel_display_name(const channel_state_t *cstate, const device_con
 	}
 	return buf;
 }
+
