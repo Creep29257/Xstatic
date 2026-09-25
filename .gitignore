@@ -1,5 +1,6 @@
 # binaires compilés
 Xstatic
+Xstatic-debug
 *.o
 #fichier backup
 *.BAK
