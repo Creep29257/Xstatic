@@ -149,19 +149,19 @@ dispatch_process_frame(struct framing_state *fs, meshtastic_FromRadio *msg,
 						{
 							if (node_telemetry.which_variant == meshtastic_Telemetry_device_metrics_tag)
 							{
-								node_to_update_telemetry->device_metrics.has_battery_level = node_telemetry.device_metrics.has_battery_level;
-								node_to_update_telemetry->device_metrics.battery_level = node_telemetry.device_metrics.battery_level;
-								node_to_update_telemetry->device_metrics.has_voltage = node_telemetry.device_metrics.has_voltage;
-								node_to_update_telemetry->device_metrics.voltage = node_telemetry.device_metrics.voltage;
+								node_to_update_telemetry->device_metrics.has_battery_level = node_telemetry.variant.device_metrics.has_battery_level;
+								node_to_update_telemetry->device_metrics.battery_level = node_telemetry.variant.device_metrics.battery_level;
+								node_to_update_telemetry->device_metrics.has_voltage = node_telemetry.variant.device_metrics.has_voltage;
+								node_to_update_telemetry->device_metrics.voltage = node_telemetry.variant.device_metrics.voltage;
 							}
 							if (node_telemetry.which_variant == meshtastic_Telemetry_environment_metrics_tag)
 							{
-								node_to_update_telemetry->environment_metrics.has_temperature = node_telemetry.environment_metrics.has_temperature;
-								node_to_update_telemetry->environment_metrics.temperature = node_telemetry.environment_metrics.temperature;
-								node_to_update_telemetry->environment_metrics.has_relative_humidity = node_telemetry.environment_metrics.has_relative_humidity;
-								node_to_update_telemetry->environment_metrics.relative_humidity = node_telemetry.environment_metrics.relative_humidity;
-								node_to_update_telemetry->environment_metrics.has_barometric_pressure = node_telemetry.environment_metrics.has_barometric_pressure;
-								node_to_update_telemetry->environment_metrics.barometric_pressure = node_telemetry.environment_metrics.barometric_pressure;
+								node_to_update_telemetry->environment_metrics.has_temperature = node_telemetry.variant.environment_metrics.has_temperature;
+								node_to_update_telemetry->environment_metrics.temperature = node_telemetry.variant.environment_metrics.temperature;
+								node_to_update_telemetry->environment_metrics.has_relative_humidity = node_telemetry.variant.environment_metrics.has_relative_humidity;
+								node_to_update_telemetry->environment_metrics.relative_humidity = node_telemetry.variant.environment_metrics.relative_humidity;
+								node_to_update_telemetry->environment_metrics.has_barometric_pressure = node_telemetry.variant.environment_metrics.has_barometric_pressure;
+								node_to_update_telemetry->environment_metrics.barometric_pressure = node_telemetry.variant.environment_metrics.barometric_pressure;
 							}
 
 						}
