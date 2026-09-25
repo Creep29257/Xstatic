@@ -52,8 +52,29 @@ cli_display_node_list(mesh_state_t *state)
 
 			printf("    position: %f, %f\n", lat, lon);
 		}
-		printf("\n");
+		
+		if (node_cursor->device_metrics.has_battery_level)
+		{
+			printf("    battery level: %u%%\n", node_cursor->device_metrics.battery_level);
+		}
+		if (node_cursor->device_metrics.has_voltage)
+		{
+			printf("    voltage: %.2fV\n", node_cursor->device_metrics.voltage);
+		}
+		if (node_cursor->environment_metrics.has_temperature)
+		{
+			printf("    temperature: %.1f°C\n", node_cursor->environment_metrics.temperature);
+		}
+		if (node_cursor->environment_metrics.has_relative_humidity)
+		{
+			printf("    humidity: %.1ff%%\n", node_cursor->environment_metrics.relative_humidity);
+		}
+		if (node_cursor->environment_metrics.has_barometric_pressure)
+		{
+			printf("     pressure: %.1f hPa\n", node_cursor->environment_metrics.barometric_pressure);
+		}
 
+		printf("\n");
 		pos_node++;
 		node_cursor = mesh_state_next_node(node_cursor);
 	}
