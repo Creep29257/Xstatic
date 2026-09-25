@@ -42,6 +42,22 @@ struct mesh_position {
     int32_t altitude;
 };
 
+struct mesh_device_metrics {
+    bool has_battery_level;
+    uint32_t battery_level;
+    bool has_voltage;
+    float voltage;
+};
+
+struct mesh_environment_metrics {
+    bool has_temperature;
+    float temperature;
+    bool has_relative_humidity;
+    float relative_humidity;
+    bool has_barometric_pressure;
+    float barometric_pressure;
+};
+
 
 struct mesh_node {
     uint32_t num;
@@ -49,6 +65,8 @@ struct mesh_node {
     char *custom_name;
     uint8_t hw_model;
     struct mesh_position position;
+    struct mesh_device_metrics device_metrics;
+    struct mesh_environment_metrics environment_metrics;
     struct mesh_node *next;
 };
 

@@ -40,4 +40,5 @@ void cli_display_device_config(device_config_t *dconfig, bool show_all);
 void cli_display_message_history(message_history_t *hist,channel_state_t *cstate, device_config_t *dconfig);
 void cli_display_channel_list(channel_state_t *cstate, const device_config_t *dconfig);
 const char *channel_display_name(const channel_state_t *cstate, const device_config_t *dconfig, int8_t channel_index, char *buf, size_t buflen);
+
 #endif

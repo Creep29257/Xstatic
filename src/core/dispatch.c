@@ -116,6 +116,64 @@ dispatch_process_frame(struct framing_state *fs, meshtastic_FromRadio *msg,
 						printf("\033[7;33m %s \033[0m\n", text);
 					}
 				}
+				if (msg->packet.decoded.portnum == meshtastic_PortNum_POSITION_APP)
+				{
+					pb_istream_t stream = pb_istream_from_buffer(msg->packet.decoded.payload.bytes, msg->packet.decoded.payload.size);
+					meshtastic_Position  node_position = meshtastic_Position_init_zero;
+					if (pb_decode(&stream, meshtastic_Position_fields, &node_position))
+					{
+						mesh_node_t *node_to_update_position = mesh_state_find_node(state, msg->packet.from);
+						if(node_to_update_position!= NULL)
+						{
+							node_to_update_position->position.valid = true;
+							node_to_update_position->position.latitude_i = node_position.latitude_i;
+							node_to_update_position->position.longitude_i = node_position.longitude_i;
+							node_to_update_position->position.altitude = node_position.altitude;
+						}
+						else
+						{
+							fprintf(stderr,"mesh_state_find_node for position update not found\n");
+						}
+
+					}
+				}
+
+				if (msg->packet.decoded.portnum == meshtastic_PortNum_TELEMETRY_APP)
+				{
+					pb_istream_t stream = pb_istream_from_buffer(msg->packet.decoded.payload.bytes, msg->packet.decoded.payload.size);
+					meshtastic_Telemetry node_telemetry = meshtastic_Telemetry_init_zero;
+					if (pb_decode(&stream, meshtastic_Telemetry_fields, &node_telemetry))
+					{
+						mesh_node_t *node_to_update_telemetry = mesh_state_find_node(state, msg->packet.from);
+						if(node_to_update_telemetry != NULL)
+						{
+							if (node_telemetry.which_variant == meshtastic_Telemetry_device_metrics_tag)
+							{
+								node_to_update_telemetry->device_metrics.has_battery_level = node_telemetry.device_metrics.has_battery_level;
+								node_to_update_telemetry->device_metrics.battery_level = node_telemetry.device_metrics.battery_level;
+								node_to_update_telemetry->device_metrics.has_voltage = node_telemetry.device_metrics.has_voltage;
+								node_to_update_telemetry->device_metrics.voltage = node_telemetry.device_metrics.voltage;
+							}
+							if (node_telemetry.which_variant == meshtastic_Telemetry_environment_metrics_tag)
+							{
+								node_to_update_telemetry->environment_metrics.has_temperature = node_telemetry.environment_metrics.has_temperature;
+								node_to_update_telemetry->environment_metrics.temperature = node_telemetry.environment_metrics.temperature;
+								node_to_update_telemetry->environment_metrics.has_relative_humidity = node_telemetry.environment_metrics.has_relative_humidity;
+								node_to_update_telemetry->environment_metrics.relative_humidity = node_telemetry.environment_metrics.relative_humidity;
+								node_to_update_telemetry->environment_metrics.has_barometric_pressure = node_telemetry.environment_metrics.has_barometric_pressure;
+								node_to_update_telemetry->environment_metrics.barometric_pressure = node_telemetry.environment_metrics.barometric_pressure;
+							}
+
+						}
+						else
+						{
+							fprintf(stderr, "mesh_state_find_node for telemetry update: not found\n");
+						}
+					}
+
+
+				}
+
 			} else
 			{
 				printf("\033[7;31m encrypted message from: %s to: %s \033[0m\n", buffer_from, buffer_to);
