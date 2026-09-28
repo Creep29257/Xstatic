@@ -410,9 +410,17 @@ main(void)
 							}
 							else
 							{
+								char buffer_to[32];
 								platform_serial_write(fd, final_frame, encoded_len + 4);
-								printf("\033[7;32m message sent to: %s -> %s \033[0m\n", nom_node, input);
-
+								if (target.to == MESH_BROADCAST_ADDR)
+								{
+									channel_display_name(&cstate , &device_config, (int8_t)target.channel, buffer_to, sizeof(buffer_to));
+								}
+								else
+								{
+									snprintf(buffer_to, sizeof(buffer_to), "%s", nom_node);
+								}
+								printf("\033[7;32m message sent to: %s -> %s \033[0m\n", buffer_to, input);
 								platform_serial_close(fd);
 								fd = platform_serial_open(serial_path);
 								state_send = IDLE;
