@@ -84,7 +84,7 @@ dispatch_process_frame(struct framing_state *fs, meshtastic_FromRadio *msg,
 				snprintf(buffer_from, sizeof(buffer_from), "unknown: %u", msg->packet.from);
 			}
 
-			if (msg->packet.to == 4294967295)
+			if (msg->packet.to == MESH_BROADCAST_ADDR)
 			{
 				channel_display_name(cstate, dconfig,(int8_t)msg->packet.channel , buffer_to, sizeof(buffer_to));
 			} else
@@ -111,7 +111,7 @@ dispatch_process_frame(struct framing_state *fs, meshtastic_FromRadio *msg,
 
 						memcpy(text, msg->packet.decoded.payload.bytes, msg->packet.decoded.payload.size);
 						text[msg->packet.decoded.payload.size] = '\0';
-						uint32_t assigned_id = message_history_add(history, msg->packet.from, text, (int8_t)msg->packet.channel);
+						uint32_t assigned_id = message_history_add(history, msg->packet.from, text, (int8_t)msg->packet.channel, msg->packet.to);
 						printf("\033[7;32m  [%u] from: %s -> %s \033[0m\n", assigned_id, buffer_from, buffer_to);
 						printf("\033[7;33m %s \033[0m\n", text);
 					}

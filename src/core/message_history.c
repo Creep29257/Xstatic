@@ -38,7 +38,7 @@ void message_history_init(message_history_t *hist)
     hist->next_id = 0;
 }
 
-uint32_t message_history_add(message_history_t *hist, uint32_t num, const char *text, int8_t channel_index)
+uint32_t message_history_add(message_history_t *hist, uint32_t num, const char *text, int8_t channel_index, uint32_t to)
 {
     
     hist->entries[hist->write_index].id = hist->next_id;
@@ -47,6 +47,7 @@ uint32_t message_history_add(message_history_t *hist, uint32_t num, const char *
     hist->entries[hist->write_index].text[sizeof(hist->entries[hist->write_index].text) - 1] ='\0';
     hist->entries[hist->write_index].channel_index = channel_index;
     hist->write_index = (hist->write_index + 1) % MESSAGE_HISTORY_SIZE;
+    hist->entries[hist->write_index].to = to;
     uint32_t assigned_id = hist->next_id;
     hist->next_id = hist->next_id + 1;
     return assigned_id;

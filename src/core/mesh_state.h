@@ -29,11 +29,12 @@
 #ifndef MESHTASTIC_MESH_STATE_H
 #define MESHTASTIC_MESH_STATE_H
 
+
 #include <stdbool.h>
 #include <stdint.h>
 
 #define MESH_LONG_NAME_MAX 40  /* doit matcher meshtastic_User.long_name (mesh.pb.h) */
-
+#define MESH_BROADCAST_ADDR 0xFFFFFFFFu
 
 struct mesh_position {
     bool valid;

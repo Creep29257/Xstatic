@@ -41,6 +41,7 @@ struct message_entry
    uint32_t num;
    char text[234];
    int8_t channel_index;
+   uint32_t to;
 };
 
 struct message_history
@@ -55,7 +56,7 @@ typedef struct message_entry message_entry_t;
 typedef struct message_history message_history_t;
 
 void message_history_init(message_history_t *hist);
-uint32_t message_history_add(message_history_t *hist, uint32_t num, const char *text, int8_t channel_index );
+uint32_t message_history_add(message_history_t *hist, uint32_t num, const char *text, int8_t channel_index, uint32_t to);
 message_entry_t *message_history_find_by_id(message_history_t *hist, uint32_t id);
 message_entry_t *message_history_list(message_history_t *hist, uint8_t *start_index, uint8_t *count);
 message_entry_t *message_history_find_repliable_by_id(message_history_t *hist, uint32_t id);

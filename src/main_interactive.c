@@ -43,12 +43,21 @@
 
 const char *VERSION = "0.2";
 
+
+
 typedef enum
 {
 	IDLE,
 	AWAITING_NODE,
 	AWAITING_MESSAGE
 } interactive_state_t;
+
+struct send_target
+{
+	uint32_t to;
+	uint8_t channel;
+} ;
+typedef struct send_target send_target_t;
 
 volatile sig_atomic_t running = 1;
 
@@ -75,14 +84,14 @@ print_help(void)
 }
 
 int
-to_radio_construct(char *to_str, char *message, meshtastic_ToRadio *out)
+to_radio_construct(const send_target_t *target, char *message, meshtastic_ToRadio *out)
 {
 	size_t text_size = sizeof(out->packet.decoded.payload.bytes);
 
 	out->which_payload_variant = meshtastic_ToRadio_packet_tag;
-	out->packet.to = strtoul(to_str, NULL, 10);
+	out->packet.to = target->to;
 	out->packet.from = 0;
-	out->packet.channel = 0;
+	out->packet.channel = target->channel;
 	out->packet.which_payload_variant = meshtastic_MeshPacket_decoded_tag;
 	out->packet.decoded.portnum = meshtastic_PortNum_TEXT_MESSAGE_APP;
 	out->packet.want_ack = true;
@@ -142,6 +151,7 @@ main(void)
 	int max_fd;
 	message_history_t history;
 	channel_state_t cstate;
+	send_target_t target = {0};
 
 	message_history_init(&history);
 	channel_state_init(&cstate);
@@ -314,6 +324,16 @@ main(void)
 					else
 					{
 						snprintf(nom_node, MESH_LONG_NAME_MAX, "%u", found_msg->num);
+						target.channel = (uint8_t )found_msg->channel_index;
+						if(found_msg->to == MESH_BROADCAST_ADDR)
+						{
+							target.to = MESH_BROADCAST_ADDR;
+
+						}
+						else
+						{
+							target.to = found_msg->num;
+						}
 						printf("message text: ");
 						fflush(stdout);
 						state_send = AWAITING_MESSAGE;
@@ -328,6 +348,8 @@ main(void)
 					{
 						/* trouvé par nom -- convertir found->num en texte dans nom_node */
 						snprintf(nom_node, MESH_LONG_NAME_MAX, "%u", found->num);
+						target.to = found->num;
+						target.channel = 0;
 						printf("message text: ");
 						fflush(stdout);
 						state_send = AWAITING_MESSAGE;
@@ -335,13 +357,16 @@ main(void)
 					else
 					{
 						char *endptr;
-						strtoul(input, &endptr, 10);
+
+						uint32_t node_num = (uint32_t)strtoul(input, &endptr, 10);
 
 						if (input[0] != '\0' && *endptr == '\0')
 						{
 							/* input est entierement numerique -- accepter tel quel */
 							strncpy(nom_node, input, MESH_LONG_NAME_MAX - 1);
 							nom_node[MESH_LONG_NAME_MAX - 1] = '\0';
+							target.to = node_num;
+							target.channel = 0;
 							printf("message text: ");
 							fflush(stdout);
 							state_send = AWAITING_MESSAGE;
@@ -362,7 +387,7 @@ main(void)
 				{
 					meshtastic_ToRadio to_radio = {0};
 
-					if (to_radio_construct(nom_node, input, &to_radio) == -1)
+					if (to_radio_construct(&target, input, &to_radio) == -1)
 					{
 						state_send = IDLE;
 					}
