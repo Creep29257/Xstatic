@@ -410,7 +410,7 @@ main(void)
 							}
 							else
 							{
-								char buffer_to[32];
+								char buffer_to[MESH_LONG_NAME_MAX];
 								platform_serial_write(fd, final_frame, encoded_len + 4);
 								if (target.to == MESH_BROADCAST_ADDR)
 								{
