@@ -346,8 +346,9 @@ main(void)
 
 					if (found != NULL)
 					{
-						/* trouvé par nom -- convertir found->num en texte dans nom_node */
-						snprintf(nom_node, MESH_LONG_NAME_MAX, "%u", found->num);
+						/* trouvé par nom -- conserver le nom tapé pour l'affichage */
+						strncpy(nom_node, input, MESH_LONG_NAME_MAX - 1);
+						nom_node[MESH_LONG_NAME_MAX - 1] = '\0';	
 						target.to = found->num;
 						target.channel = 0;
 						printf("message text: ");
@@ -378,52 +379,62 @@ main(void)
 						}
 					}
 				}
-				else if (state_send == AWAITING_MESSAGE && input[0] == '\0')
-				{
-					printf("empty message, cancelled\n");
-					state_send = IDLE;
-				}			
 				else if (state_send == AWAITING_MESSAGE)
 				{
-					meshtastic_ToRadio to_radio = {0};
+					int i = 0;
 
-					if (to_radio_construct(&target, input, &to_radio) == -1)
+					while (input[i] != '\0' && input[i] == ' ')
 					{
+						i++;
+					}
+
+					if (input[i] == '\0')
+					{
+						printf("empty message, cancelled\n");
 						state_send = IDLE;
 					}
 					else
 					{
-						uint8_t encoded_buffer[FRAMING_MAX_PAYLOAD];
-						size_t encoded_len;
+						meshtastic_ToRadio to_radio = {0};
 
-						if (to_radio_encode(&to_radio, encoded_buffer, &encoded_len) == -1)
+						if (to_radio_construct(&target, input, &to_radio) == -1)
 						{
 							state_send = IDLE;
 						}
 						else
 						{
-							unsigned char final_frame[FRAMING_MAX_PAYLOAD + 4];
+							uint8_t encoded_buffer[FRAMING_MAX_PAYLOAD];
+							size_t encoded_len;
 
-							if (framing_message_construct(encoded_buffer, encoded_len, final_frame, sizeof(final_frame)) == -1)
+							if (to_radio_encode(&to_radio, encoded_buffer, &encoded_len) == -1)
 							{
 								state_send = IDLE;
 							}
 							else
 							{
-								char buffer_to[MESH_LONG_NAME_MAX];
-								platform_serial_write(fd, final_frame, encoded_len + 4);
-								if (target.to == MESH_BROADCAST_ADDR)
+								unsigned char final_frame[FRAMING_MAX_PAYLOAD + 4];
+
+								if (framing_message_construct(encoded_buffer, encoded_len, final_frame, sizeof(final_frame)) == -1)
 								{
-									channel_display_name(&cstate , &device_config, (int8_t)target.channel, buffer_to, sizeof(buffer_to));
+									state_send = IDLE;
 								}
 								else
 								{
-									snprintf(buffer_to, sizeof(buffer_to), "%s", nom_node);
+									char buffer_to[MESH_LONG_NAME_MAX];
+									platform_serial_write(fd, final_frame, encoded_len + 4);
+									if (target.to == MESH_BROADCAST_ADDR)
+									{
+										channel_display_name(&cstate, &device_config, (int8_t)target.channel, buffer_to, sizeof(buffer_to));
+									}
+									else
+									{
+										snprintf(buffer_to, sizeof(buffer_to), "%s", nom_node);
+									}
+									printf("\033[7;32m message sent to: %s -> %s \033[0m\n", buffer_to, input);
+									platform_serial_close(fd);
+									fd = platform_serial_open(serial_path);
+									state_send = IDLE;
 								}
-								printf("\033[7;32m message sent to: %s -> %s \033[0m\n", buffer_to, input);
-								platform_serial_close(fd);
-								fd = platform_serial_open(serial_path);
-								state_send = IDLE;
 							}
 						}
 					}
