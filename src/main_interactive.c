@@ -40,7 +40,7 @@
 #include "core/message_history.h"
 #include "core/dispatch.h"
 #include "ui/cli_display.h"
-
+#include "protocol/to_radio.h"
 const char *VERSION = "0.2";
 
 
@@ -51,13 +51,6 @@ typedef enum
 	AWAITING_NODE,
 	AWAITING_MESSAGE
 } interactive_state_t;
-
-struct send_target
-{
-	uint32_t to;
-	uint8_t channel;
-} ;
-typedef struct send_target send_target_t;
 
 volatile sig_atomic_t running = 1;
 
@@ -83,51 +76,7 @@ print_help(void)
 	printf("\n");
 }
 
-int
-to_radio_construct(const send_target_t *target, char *message, meshtastic_ToRadio *out)
-{
-	size_t text_size = sizeof(out->packet.decoded.payload.bytes);
 
-	out->which_payload_variant = meshtastic_ToRadio_packet_tag;
-	out->packet.to = target->to;
-	out->packet.from = 0;
-	out->packet.channel = target->channel;
-	out->packet.which_payload_variant = meshtastic_MeshPacket_decoded_tag;
-	out->packet.decoded.portnum = meshtastic_PortNum_TEXT_MESSAGE_APP;
-	out->packet.want_ack = true;
-	out->packet.priority = meshtastic_MeshPacket_Priority_RELIABLE;
-
-	if (strlen(message) <= text_size)
-	{
-		memcpy(out->packet.decoded.payload.bytes, message, strlen(message));
-		out->packet.decoded.payload.size = strlen(message);
-	}
-	else
-	{
-		fprintf(stderr, "to_radio_construct : message is too long\n");
-		return -1;
-	}
-	return 0;
-}
-
-/*
- * to_radio_encode: encode un meshtastic_ToRadio en protobuf brut dans
- * out_buffer. Taille réelle récupérée via stream.bytes_written (le
- * message ne remplit pas forcément tout FRAMING_MAX_PAYLOAD).
- */
-int
-to_radio_encode(meshtastic_ToRadio *to_radio, uint8_t *out_buffer, size_t *out_len)
-{
-	pb_ostream_t stream = pb_ostream_from_buffer(out_buffer, FRAMING_MAX_PAYLOAD);
-
-	if (pb_encode(&stream, meshtastic_ToRadio_fields, to_radio) == false)
-	{
-		fprintf(stderr, "to_radio_encode : cant encode msg\n");
-		return -1;
-	}
-	*out_len = stream.bytes_written;
-	return 0;
-}
 
 int
 main(void)
