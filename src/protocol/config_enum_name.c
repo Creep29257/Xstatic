@@ -119,4 +119,29 @@ modem_preset_name(meshtastic_Config_LoRaConfig_ModemPreset preset)
 	default: return "unknown";
 	}
 }
- 
+const char *display_units_name( meshtastic_Config_DisplayConfig_DisplayUnits unit)
+{
+	switch (units)
+	{
+	case meshtastic_Config_DisplayConfig_DisplayUnits_METRIC:
+		return "metric";
+	case meshtastic_Config_DisplayConfig_DisplayUnits_IMPERIAL:
+		return "imperial";
+	default:
+		return "unknown";
+	}
+}
+const char *bluetooth_mode_name(meshtastic_Config_BluetoothConfig_PairingMode mode)
+{
+	switch(mode)
+	{
+		case meshtastic_Config_BluetoothConfig_PairingMode_RANDOM_PIN :
+		return "random pin";
+		case meshtastic_Config_BluetoothConfig_PairingMode_FIXED_PIN:
+		return "fixed pin";
+	case meshtastic_Config_BluetoothConfig_PairingMode_NO_PIN:
+		return "no pin";
+	default:
+		return "unknown";
+	}
+}

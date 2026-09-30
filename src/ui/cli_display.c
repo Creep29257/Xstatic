@@ -139,7 +139,7 @@ cli_display_device_config(device_config_t *dconfig, bool show_all)
 	if (dconfig->has_display)
 	{
 		printf("display screen_on_secs: %u\n", dconfig->display.screen_on_secs);
-		printf("display units: %d\n", dconfig->display.units);
+		printf("display units: %s\n", display_units_name(dconfig->display.units));
 	} else
 	{
 		printf("display: not received\n");
@@ -148,7 +148,7 @@ cli_display_device_config(device_config_t *dconfig, bool show_all)
 	if (dconfig->has_bluetooth)
 	{
 		printf("bluetooth enabled: %s\n", dconfig->bluetooth.enabled ? "true" : "false");
-		printf("bluetooth mode: %d\n", dconfig->bluetooth.mode);
+		printf("bluetooth mode: %s\n", bluetooth_mode_name(dconfig->bluetooth.mode));
 	} else
 	{
 		printf("bluetooth: not received\n");

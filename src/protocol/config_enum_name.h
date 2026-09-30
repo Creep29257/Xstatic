@@ -33,6 +33,8 @@
 const char *device_role_name(meshtastic_Config_DeviceConfig_Role role);
 const char *lora_region_name(meshtastic_Config_LoRaConfig_RegionCode region);
 const char *modem_preset_name(meshtastic_Config_LoRaConfig_ModemPreset preset);
+const char *display_units_name( meshtastic_Config_DisplayConfig_DisplayUnits unit);
+const char *bluetooth_mode_name(meshtastic_Config_BluetoothConfig_PairingMode mode);
  
 #endif /* CONFIG_ENUM_NAME_H */
  

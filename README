@@ -13,7 +13,7 @@ Binaires :
 Commandes de Xstatic :
   list             affiche les nodes connus
   send             envoie un message (node, puis texte)
-  show config      résumé de la config du device (role, lora, firmware, modèle)
+  show config      résumé de la config du device (role, lora)
   show all config  dump complet de la config du device
   reply <id>       répond à un message reçu, par son [id]
   history          affiche l'historique des messages reçus
@@ -62,7 +62,7 @@ Limites connues :
 
 Note sur l'usage de l'IA :
   Ce projet est développé avec l'assistance de Claude (Anthropic), utilisé
-  en mode "sparring" : le code métier est écrit par l'auteur humain, l'IA
+  en mode "sparring" : le code métier est écrit par l'auteur , l'IA
   agissant comme guide/relecteur (explications, détection d'erreurs, revue
   de conception) plutôt que générateur de code. Quelques fichiers annexes
   (Makefile, scripts, docs) ont pu être générés directement par l'IA.
