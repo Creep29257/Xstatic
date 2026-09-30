@@ -119,7 +119,7 @@ modem_preset_name(meshtastic_Config_LoRaConfig_ModemPreset preset)
 	default: return "unknown";
 	}
 }
-const char *display_units_name( meshtastic_Config_DisplayConfig_DisplayUnits unit)
+const char *display_units_name( meshtastic_Config_DisplayConfig_DisplayUnits units)
 {
 	switch (units)
 	{
