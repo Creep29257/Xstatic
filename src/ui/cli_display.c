@@ -107,7 +107,7 @@ cli_display_device_config(device_config_t *dconfig, bool show_all)
 		return;
 	}
 
-	printf("\n-- show all config --\n\n");
+	//printf("\n-- show all config --\n\n");
 
 	if (dconfig->has_position)
 	{
