@@ -34,7 +34,8 @@ $(TARGET): src/main_interactive.c $(COMMON_SRCS)
 	@case "`uname -s`" in \
 		FreeBSD) PLATFORM_SRC=src/platform/platform_freebsd.c ;; \
 		Linux)   PLATFORM_SRC=src/platform/platform_linux.c ;; \
-		*) echo "OS non supporte: `uname -s`" >&2; exit 1 ;; \
+		Darwin)  PLATFORM_SRC=src/platform/platform_macos.c;; \
+              *) echo "OS non supporte: `uname -s`" >&2; exit 1 ;; \
 	esac; \
 	cc $(CFLAGS) -o $(TARGET) src/main_interactive.c $(COMMON_SRCS) $$PLATFORM_SRC $(INCLUDES)
 
