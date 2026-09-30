@@ -16,6 +16,7 @@ Commandes de Xstatic :
   show config      résumé de la config du device (role, lora)
   show all config  dump complet de la config du device
   reply <id>       répond à un message reçu, par son [id]
+  channels list    list les channels
   history          affiche l'historique des messages reçus
   quit             quitte le programme
 
