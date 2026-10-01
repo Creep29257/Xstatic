@@ -262,7 +262,7 @@ main(void)
 					known_command = true;
 					state_send = AWAITING_NODE;
 				}
-				if (strcmp(input, "csend") == 0)
+				else if (strcmp(input, "csend") == 0)
 				{
 					printf("Send message to channel name: ");
 					fflush(stdout);
@@ -313,23 +313,7 @@ main(void)
 						fflush(stdout);
 						state_send = AWAITING_MESSAGE;
 					}
-					else if (state_send == AWAITING_CHANNEL)
-					{
-						int channel = channel_state_find_by_name(&cstate,input,device_config.lora.modem_preset);
-						if(channel == -1)
-						{
-							printf("unknown channel, see 'channels list' \n");
-							state_send = IDLE;
-						}
-						else
-						{
-							target.to = MESH_BROADCAST_ADDR;
-							target.channel = (uint8_t) channel;
-							printf("message text: ");
-							fflush(stdout);
-							state_send = AWAITING_MESSAGE;
-						}
-					}
+					
 					else
 					{
 						char *endptr;
@@ -354,6 +338,23 @@ main(void)
 						}
 					}
 				}
+				else if (state_send == AWAITING_CHANNEL)
+					{
+						int channel = channel_state_find_by_name(&cstate,input,device_config.lora.modem_preset);
+						if(channel == -1)
+						{
+							printf("unknown channel, see 'channels list' \n");
+							state_send = IDLE;
+						}
+						else
+						{
+							target.to = MESH_BROADCAST_ADDR;
+							target.channel = (uint8_t) channel;
+							printf("message text: ");
+							fflush(stdout);
+							state_send = AWAITING_MESSAGE;
+						}
+					}
 				else if (state_send == AWAITING_MESSAGE)
 				{
 					int i = 0;
