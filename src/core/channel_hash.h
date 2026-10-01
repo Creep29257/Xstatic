@@ -45,6 +45,6 @@
 
 
 uint8_t channel_hash_compute(const channel_slot_t *slot);
-int channel_hash_find_index(const channel_state_t *cstate, uint8_t hash, meshtastic_Config_LoRaConfig_ModemPreset preset);
+int channel_hash_find_index(const channel_state_t *cstate, uint8_t hash);
 
 #endif
