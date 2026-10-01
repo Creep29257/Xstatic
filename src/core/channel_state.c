@@ -65,18 +65,23 @@ int8_t channel_state_find_by_name(const channel_state_t *cstate, const char *nam
         {
             continue;
         }
-        if(cstate->channels[i].name[0] == '\0')
+       if (strcmp(channel_state_effective_name(&cstate->channels[i], preset), name) == 0)
         {
-            if(strcmp(modem_preset_name(preset), name) == 0)
-            {
-                return i;
-            }
-           
+    return i;
         }
-       if (strcmp(cstate->channels[i].name, name) == 0)
-        {
-            return i;
-        }
+       
     }
     return -1;
+}
+
+const char *channel_state_effective_name(const channel_slot_t *slot, meshtastic_Config_LoRaConfig_ModemPreset preset)
+{
+    if(slot->name[0] == '\0')
+    {
+         return modem_preset_name(preset);
+    }
+    else
+    {
+        return slot->name
+    }
 }

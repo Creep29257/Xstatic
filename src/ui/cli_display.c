@@ -242,20 +242,13 @@ void cli_display_channel_list(channel_state_t *cstate, const device_config_t *dc
 }
 const char *channel_display_name(const channel_state_t *cstate, const device_config_t *dconfig, int8_t channel_index, char *buf, size_t buflen)
 {
-	if(channel_index == -1)
+	if(channel_index <0 || channel_index >=8 )
 	{
 		strncpy(buf,"Unknown channel",buflen);
 		buf[buflen - 1] ='\0';
 		return buf;
 	}
-	if(cstate->channels[channel_index].name[0] == '\0')
-	{
-		snprintf(buf, buflen, "%s", modem_preset_name(dconfig->lora.modem_preset));
-	}
-	else
-	{
-		snprintf(buf, buflen, "%s", cstate->channels[channel_index].name);
-	}
+	snprintf(buf, buflen, "%s", channel_state_effective_name(&cstate->channels[channel_index],dconfig->lora.modem_preset));
 	return buf;
 }
 

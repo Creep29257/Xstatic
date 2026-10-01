@@ -49,4 +49,6 @@ typedef struct
 void channel_state_init(channel_state_t *channels);
 void channel_state_update(channel_state_t *channels, const meshtastic_Channel *ch);
 int8_t channel_state_find_by_name(const channel_state_t *cstate, const char *name, meshtastic_Config_LoRaConfig_ModemPreset preset);
+const char *channel_state_effective_name(const channel_slot_t *slot, meshtastic_Config_LoRaConfig_ModemPreset preset);
+
 #endif
