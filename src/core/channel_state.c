@@ -28,6 +28,7 @@
 #include <string.h>
 #include "core/channel_state.h"
 #include "channel_hash.h"
+#include "config_enum_name.h"
 
 void channel_state_init(channel_state_t *channels)
 {
@@ -54,4 +55,28 @@ if(ch->index >=0 && ch->index <8)
 
 }
 
+}
+
+int8_t channel_state_find_by_name(const channel_state_t *cstate, const char *name, meshtastic_Config_LoRaConfig_ModemPreset preset)
+{
+    for (int i = 0; i < 8; i++)
+    {
+        if (cstate->channels[i].role == meshtastic_Channel_Role_DISABLED)
+        {
+            continue;
+        }
+        if(cstate->channels[i].name[0] == '\0')
+        {
+            if(strcmp(modem_preset_name(preset), name) == 0)
+            {
+                return i;
+            }
+           
+        }
+       if (strcmp(cstate->channels[i].name, name) == 0)
+        {
+            return i;
+        }
+    }
+    return -1;
 }

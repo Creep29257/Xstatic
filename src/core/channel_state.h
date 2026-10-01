@@ -47,5 +47,5 @@ typedef struct
 
 void channel_state_init(channel_state_t *channels);
 void channel_state_update(channel_state_t *channels, const meshtastic_Channel *ch);
-
+int8_t channel_state_find_by_name(const channel_state_t *cstate, const char *name);
 #endif

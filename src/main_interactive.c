@@ -49,7 +49,8 @@ typedef enum
 {
 	IDLE,
 	AWAITING_NODE,
-	AWAITING_MESSAGE
+	AWAITING_MESSAGE,
+	AWAITING_CHANNEL
 } interactive_state_t;
 
 volatile sig_atomic_t running = 1;
@@ -65,14 +66,15 @@ void
 print_help(void)
 {
 	printf("Available commands:\n");
-	printf("  list          - show known nodes\n");
-	printf("  send          - send a message (node, then text)\n");
-	printf("  show config   - show device config summary (role, lora)\n");
+	printf("  list            - show known nodes\n");
+	printf("  send            - send a message (node, then text)\n");
+	printf("  csend           - send a message to a channel (channel name, then text)\n");
+	printf("  show config     - show device config summary (role, lora)\n");
 	printf("  show all config - show full device config dump\n");
-	printf("  reply <id>    - reply to a received message by its [id]\n");
-	printf("  history       - show received message history\n");
+	printf("  reply <id>      - reply to a received message by its [id]\n");
+	printf("  history         - show received message history\n");
 	printf("  channels list   - show channels\n");
-	printf("  quit          - exit the program\n");
+	printf("  quit            - exit the program\n");
 	printf("\n");
 }
 
@@ -260,6 +262,13 @@ main(void)
 					known_command = true;
 					state_send = AWAITING_NODE;
 				}
+				if (strcmp(input, "csend") == 0)
+				{
+					printf("Send message to channel name: ");
+					fflush(stdout);
+					known_command = true;
+					state_send = AWAITING_CHANNEL;
+				}
 				else if (strncmp(input, "reply ", 6) == 0)
 				{
 					char *endptr;
@@ -303,6 +312,23 @@ main(void)
 						printf("message text: ");
 						fflush(stdout);
 						state_send = AWAITING_MESSAGE;
+					}
+					else if (state_send == AWAITING_CHANNEL)
+					{
+						int channel = channel_state_find_by_name(&cstate,input,device_config.lora.modem_preset);
+						if(channel == -1)
+						{
+							printf("unknown channel, see 'channels list' \n");
+							state_send = IDLE;
+						}
+						else
+						{
+							target.to = MESH_BROADCAST_ADDR;
+							target.channel = (uint8_t) channel;
+							printf("message text: ");
+							fflush(stdout);
+							state_send = AWAITING_MESSAGE;
+						}
 					}
 					else
 					{
